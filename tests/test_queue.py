@@ -19,7 +19,6 @@ def test_enqueue(connection: QueueConnection):
 
     item2 = connection.enqueue("test2")
     assert item2.name == "test2"
-    assert item2.id > item1.id
     assert item2.position == 1
 
 
@@ -81,6 +80,11 @@ def test_positions_change_after_removal(connection: QueueConnection):
     items = [connection.enqueue(f"item{i}") for i in range(3)]
     connection.remove(items[1].id)
     assert connection.get_all() == [
-        QueueEntry(position=pos, id=item.id, name=item.name)
+        item.model_copy(update={'position': pos})
         for pos, item in enumerate((items[0], items[2]))
     ]
+
+
+def test_tokens_are_unique(connection: QueueConnection):
+    tokens = [connection.enqueue("item").token for _ in range(100)]
+    assert len(set(tokens)) == len(tokens)

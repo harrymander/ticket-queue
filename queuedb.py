@@ -1,7 +1,12 @@
 import sqlite3
+import uuid
 from os import PathLike
 
 from models import QueueEntry
+
+
+def gen_token() -> str:
+    return uuid.uuid4().hex
 
 
 class QueueConnection:
@@ -22,7 +27,8 @@ class QueueConnection:
             self.con.execute("""
                 CREATE TABLE IF NOT EXISTS queue (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name NOT NULL
+                    name NOT NULL,
+                    token NOT NULL
                 )
             """)
 
@@ -30,20 +36,21 @@ class QueueConnection:
         if not name:
             raise ValueError('name must have a value')
 
+        token = gen_token()
         with self.con:
             position, id = self.con.execute(
                 """
                 WITH count_query AS (
                     SELECT COUNT(*) AS count FROM queue
                 )
-                INSERT INTO queue (name)
-                VALUES (?)
+                INSERT INTO queue (name, token)
+                VALUES (?, ?)
                 RETURNING (SELECT count FROM count_query) AS position, id;
                 """,
-                (name,)
+                (name, token)
             ).fetchone()
 
-        return QueueEntry(name=name, id=id, position=position - 1)
+        return QueueEntry(name=name, id=id, token=token, position=position - 1)
 
     def remove(self, id: int) -> None:
         with self.con:
@@ -64,25 +71,26 @@ class QueueConnection:
 
         with self.con:
             items = self.con.execute(f"""
-                SELECT id, name
+                SELECT id, name, token
                 FROM queue
                 ORDER BY id
                 {limit_query}
             """).fetchall()
 
         return [
-            QueueEntry(id=id, position=pos, name=name)
-            for pos, (id, name) in enumerate(items)
+            QueueEntry(id=id, name=name, token=token, position=pos)
+            for pos, (id, name, token) in enumerate(items)
         ]
 
     def get(self, id: int) -> None | QueueEntry:
         with self.con:
             ret = self.con.execute(
                 """
-                SELECT position, name from (
+                SELECT name, token, position from (
                     SELECT
                         id,
                         name,
+                        token,
                         ROW_NUMBER() OVER (ORDER BY id) AS position
                     FROM queue
                 )
@@ -92,7 +100,8 @@ class QueueConnection:
             ).fetchone()
 
         return QueueEntry(
-            position=ret[0] - 1,
+            name=ret[0],
+            token=ret[1],
+            position=ret[2] - 1,
             id=id,
-            name=ret[1],
         ) if ret else None
