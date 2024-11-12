@@ -54,12 +54,20 @@ class QueueConnection:
                 (id,)
             )
 
-    def get_all(self) -> list[QueueEntry]:
+    def get_all(self, *, limit: int | None = None) -> list[QueueEntry]:
+        if limit is not None:
+            if limit <= 0:
+                raise ValueError('limit must be greater than 0')
+            limit_query = f"LIMIT {limit}"
+        else:
+            limit_query = ""
+
         with self.con:
-            items = self.con.execute("""
+            items = self.con.execute(f"""
                 SELECT id, name
                 FROM queue
                 ORDER BY id
+                {limit_query}
             """).fetchall()
 
         return [

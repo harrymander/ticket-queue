@@ -33,6 +33,11 @@ def test_get_all(connection: QueueConnection):
     assert connection.get_all() == [item1, item2]
 
 
+def test_get_all_with_limit(connection: QueueConnection):
+    items = [connection.enqueue(f"item{i}") for i in range(5)]
+    assert connection.get_all(limit=3) == items[:3]
+
+
 def test_get(connection: QueueConnection):
     items = [connection.enqueue("test{i}") for i in range(3)]
     assert items == [connection.get(item.id) for item in items]
