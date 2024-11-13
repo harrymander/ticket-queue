@@ -1,4 +1,5 @@
 import sqlite3
+import time
 import uuid
 from os import PathLike
 
@@ -28,7 +29,8 @@ class QueueConnection:
                 CREATE TABLE IF NOT EXISTS queue (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name NOT NULL,
-                    token NOT NULL
+                    token NOT NULL,
+                    timestamp INTEGER NOT NULL
                 )
             """)
 
@@ -37,21 +39,26 @@ class QueueConnection:
             raise ValueError("name must have a value")
 
         token = gen_token()
+        timestamp = int(time.time())
         with self.con:
             position, id = self.con.execute(
                 """
                 WITH count_query AS (
                     SELECT COUNT(*) AS count FROM queue
                 )
-                INSERT INTO queue (name, token)
-                VALUES (?, ?)
+                INSERT INTO queue (name, token, timestamp)
+                VALUES (?, ?, ?)
                 RETURNING (SELECT count FROM count_query) AS position, id;
                 """,
-                (name, token),
+                (name, token, timestamp),
             ).fetchone()
 
         return QueueTicket(
-            name=name, id=id, token=token, position=position - 1
+            name=name,
+            id=id,
+            token=token,
+            position=position - 1,
+            timestamp=timestamp,
         )
 
     def remove(self, id: int) -> None:
@@ -73,26 +80,33 @@ class QueueConnection:
 
         with self.con:
             items = self.con.execute(f"""
-                SELECT id, name, token
+                SELECT id, name, token, timestamp
                 FROM queue
                 ORDER BY id
                 {limit_query}
             """).fetchall()
 
         return [
-            QueueTicket(id=id, name=name, token=token, position=pos)
-            for pos, (id, name, token) in enumerate(items)
+            QueueTicket(
+                id=id,
+                name=name,
+                token=token,
+                timestamp=timestamp,
+                position=pos,
+            )
+            for pos, (id, name, token, timestamp) in enumerate(items)
         ]
 
     def get(self, id: int) -> None | QueueTicket:
         with self.con:
             ret = self.con.execute(
                 """
-                SELECT name, token, position from (
+                SELECT name, token, timestamp, position from (
                     SELECT
                         id,
                         name,
                         token,
+                        timestamp,
                         ROW_NUMBER() OVER (ORDER BY id) AS position
                     FROM queue
                 )
@@ -105,7 +119,8 @@ class QueueConnection:
             QueueTicket(
                 name=ret[0],
                 token=ret[1],
-                position=ret[2] - 1,
+                timestamp=ret[2],
+                position=ret[3] - 1,
                 id=id,
             )
             if ret

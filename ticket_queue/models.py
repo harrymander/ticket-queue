@@ -31,6 +31,14 @@ class QueueTicket(BaseModel):
     position: int = Field(
         ..., ge=0, description="Position in queue; 0 means front of queue"
     )
+    timestamp: int = Field(
+        ...,
+        gt=0,
+        description=(
+            "Approximate of ticket creation in seconds since Unix epoch "
+            "(1970-01-01 00:00:00 UTC)"
+        ),
+    )
 
 
 class NewTicket(BaseModel):
