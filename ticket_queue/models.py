@@ -18,10 +18,19 @@ NonEmptyString = Annotated[str, AfterValidator(_non_empty_string_validator)]
 
 
 class QueueTicket(BaseModel):
-    id: int = Field(..., ge=1)
-    name: NonEmptyString
-    token: str = Field(..., min_length=1)
-    position: int = Field(..., ge=0)
+    id: int = Field(..., ge=1, description="Unique ID of the ticket.")
+    name: NonEmptyString = Field(..., description="Display name for ticket.")
+    token: str = Field(
+        ...,
+        min_length=1,
+        description=(
+            "Ticket token, non-admin clients must provide this to retrieve or"
+            "modify the ticket associated with the token."
+        ),
+    )
+    position: int = Field(
+        ..., ge=0, description="Position in queue; 0 means front of queue"
+    )
 
 
 class NewTicket(BaseModel):

@@ -1,40 +1,62 @@
+import base64
 from typing import Annotated
 
-import fastapi
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    Header,
+    HTTPException,
+    Path,
+    Query,
+)
 
 from ticket_queue.models import NewTicket, QueueTicket
 from ticket_queue.ticket_queue import QueueConnection
 
 
-class TicketNotFound(fastapi.HTTPException):
+class TicketNotFound(HTTPException):
     def __init__(self):
         super().__init__(status_code=404, detail="Ticket not found")
 
 
-class Unauthorized(fastapi.HTTPException):
+class Unauthorized(HTTPException):
     def __init__(self):
         super().__init__(status_code=401, detail="Unauthorized")
 
 
-OptionalHeader = Annotated[str | None, fastapi.Header()]
+PasswordAuthHeader = Annotated[
+    str | None,
+    Header(
+        description=(
+            "Authentication header with format "
+            "`Password <base64-encoded password>`"
+        )
+    ),
+]
 
 
-def _is_admin(authorization: OptionalHeader = None):
+def _is_admin(authorization: PasswordAuthHeader = None):
     if not authorization:
         raise Unauthorized()
 
-    split_val = authorization.split(" ", maxsplit=1)
-    if (
-        len(split_val) < 2
-        or split_val[0] != "Password"
-        or split_val[1] != "admin"
-    ):
+    name, *val = authorization.split(" ", maxsplit=1)
+    if not val or name != "Password":
+        raise Unauthorized()
+
+    decoded = base64.b64decode(val[0])
+    try:
+        password = decoded.decode("ascii")
+    except UnicodeDecodeError:
+        raise Unauthorized()
+
+    if password != "admin":
         raise Unauthorized()
 
 
-app = fastapi.FastAPI()
-api = fastapi.APIRouter()
-admin_api = fastapi.APIRouter(dependencies=[fastapi.Depends(_is_admin)])
+app = FastAPI()
+api = APIRouter()
+admin_api = APIRouter(dependencies=[Depends(_is_admin)])
 
 
 def get_queue_connection():
@@ -43,17 +65,21 @@ def get_queue_connection():
         yield con
 
 
-Connection = Annotated[QueueConnection, fastapi.Depends(get_queue_connection)]
+Connection = Annotated[QueueConnection, Depends(get_queue_connection)]
+TicketId = Annotated[int, Path(description="Ticket ID")]
+TokenQuery = Annotated[str, Query(description="Ticket token")]
 
 
 @api.get("/ticket/{id}")
 def get_ticket(
-    id: int,
+    id: TicketId,
     connection: Connection,
-    token: str | None = None,
+    token: TokenQuery,
 ) -> QueueTicket:
-    if not token:
-        raise TicketNotFound()
+    """Get a ticket by ID and token.
+
+    Returns 404 if ticket is not found or the provided token does not match.
+    """
 
     ticket = connection.get(id)
     if ticket and ticket.token == token:
@@ -67,24 +93,33 @@ def new_ticket(new_ticket: NewTicket, connection: Connection) -> QueueTicket:
     return connection.enqueue(new_ticket.name)
 
 
-def get_token_from_header(val: str) -> str | None:
-    split_val = val.split(" ", maxsplit=1)
-    if len(split_val) < 2 or split_val[0] != "Token":
-        return None
+TokenAuthHeader = Annotated[
+    str,
+    Header(
+        description=(
+            "Authorization header containing token for ticket. "
+            "Has format `Token <token>`"
+        )
+    ),
+]
 
-    return split_val[1] or None
+
+def get_token_from_header(authorization: TokenAuthHeader) -> str:
+    name, *val = authorization.split(" ", maxsplit=1)
+    if not val or name != "Token":
+        raise Unauthorized()
+    return val[0]
+
+
+TicketToken = Annotated[str, Depends(get_token_from_header)]
 
 
 @api.delete("/ticket/{id}", status_code=204)
 def delete_ticket(
-    id: int,
+    id: TicketId,
     connection: Connection,
-    authorization: OptionalHeader = None,
+    token: TicketToken,
 ) -> None:
-    token = get_token_from_header(authorization) if authorization else None
-    if not token:
-        raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
-
     ticket = connection.get(id)
     if not ticket:
         raise TicketNotFound()
@@ -98,13 +133,13 @@ def delete_ticket(
 @admin_api.get("/tickets")
 def get_all_tickets(
     connection: Connection,
-    limit: Annotated[int | None, fastapi.Query(min=1)] = None,
+    limit: Annotated[int | None, Query(min=1)] = None,
 ) -> list[QueueTicket]:
     return connection.get_all(limit=limit)
 
 
 @admin_api.get("/ticket/{id}")
-def admin_get_ticket(id: int, connection: Connection) -> QueueTicket:
+def admin_get_ticket(id: TicketId, connection: Connection) -> QueueTicket:
     ticket = connection.get(id)
     if not ticket:
         raise TicketNotFound()
@@ -113,7 +148,7 @@ def admin_get_ticket(id: int, connection: Connection) -> QueueTicket:
 
 
 @admin_api.delete("/ticket/{id}", status_code=204)
-def admin_delete_ticket(id: int, connection: Connection) -> None:
+def admin_delete_ticket(id: TicketId, connection: Connection) -> None:
     connection.remove(id)
 
 
