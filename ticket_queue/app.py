@@ -1,4 +1,5 @@
 import base64
+import binascii
 from typing import Annotated
 
 from fastapi import (
@@ -36,6 +37,18 @@ PasswordAuthHeader = Annotated[
 ]
 
 
+def base64_decode(val: str) -> str | None:
+    try:
+        decoded = base64.b64decode(val, validate=True)
+    except binascii.Error:
+        return None
+
+    try:
+        return decoded.decode()
+    except UnicodeDecodeError:
+        return None
+
+
 def _is_admin(authorization: PasswordAuthHeader = None):
     if not authorization:
         raise Unauthorized()
@@ -44,12 +57,7 @@ def _is_admin(authorization: PasswordAuthHeader = None):
     if not val or name != "Password":
         raise Unauthorized()
 
-    decoded = base64.b64decode(val[0])
-    try:
-        password = decoded.decode("ascii")
-    except UnicodeDecodeError:
-        raise Unauthorized()
-
+    password = base64_decode(val[0])
     if password != "admin":
         raise Unauthorized()
 
