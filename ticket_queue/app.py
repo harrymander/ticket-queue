@@ -102,7 +102,7 @@ def new_ticket(new_ticket: NewTicket, connection: Connection) -> QueueTicket:
 
 
 TokenAuthHeader = Annotated[
-    str,
+    str | None,
     Header(
         description=(
             "Authorization header containing token for ticket. "
@@ -112,7 +112,9 @@ TokenAuthHeader = Annotated[
 ]
 
 
-def get_token_from_header(authorization: TokenAuthHeader) -> str:
+def get_token_from_header(authorization: TokenAuthHeader = None) -> str:
+    if not authorization:
+        raise Unauthorized()
     name, *val = authorization.split(" ", maxsplit=1)
     if not val or name != "Token":
         raise Unauthorized()

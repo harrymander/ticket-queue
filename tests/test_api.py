@@ -105,7 +105,7 @@ def test_delete_ticket_changes_position() -> None:
 def test_delete_ticket_missing_authorization_fails(new_ticket) -> None:
     id = new_ticket["id"]
     ret = client.delete(f"/api/ticket/{id}")
-    assert ret.status_code == Status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.mark.parametrize(
