@@ -1,3 +1,4 @@
+import base64
 from pathlib import Path
 
 import pytest
@@ -128,5 +129,113 @@ def test_delete_ticket_invalid_authorization_fails(
     ret = client.delete(
         f"/api/ticket/{id}",
         headers={"Authorization": header_fmt.format(new_ticket["token"])},
+    )
+    assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
+
+
+PLAINTEXT_PASSWORD = "admin"
+ENCODED_PASSWORD = base64.b64encode(PLAINTEXT_PASSWORD.encode()).decode(
+    "ascii"
+)
+PASSWORD_AUTH_HEADER = {"Authorization": f"Password {ENCODED_PASSWORD}"}
+INVALID_UTF8 = base64.b64encode(b"\x00\x00").decode()
+
+
+def parametrize_invalid_password_auth_header(name="header"):
+    invalid_header_vals = (
+        f"password {ENCODED_PASSWORD}",
+        f"Password  {ENCODED_PASSWORD}",
+        f"Password {ENCODED_PASSWORD} ",
+        f"Password {ENCODED_PASSWORD.rstrip('=')}",
+        f"Password {ENCODED_PASSWORD}invalid",
+        f"Password ={ENCODED_PASSWORD}",
+        "Password invalid",
+        "Password",
+        ENCODED_PASSWORD,
+        f"Password {PLAINTEXT_PASSWORD}",
+        f"Password {INVALID_UTF8}",
+    )
+    return pytest.mark.parametrize(
+        name,
+        [{"Authorization": val} for val in invalid_header_vals] + [{}],
+        ids=invalid_header_vals + ("[missing]",),
+    )
+
+
+@pytest.fixture()
+def tickets() -> list[dict]:
+    return [
+        client.post("/api/tickets", json={"name": f"t{i}"}).json()
+        for i in range(5)
+    ]
+
+
+def test_admin_get_no_tickets() -> None:
+    ret = client.get("/api/admin/tickets", headers=PASSWORD_AUTH_HEADER)
+    assert ret.status_code == Status.HTTP_200_OK
+    assert ret.json() == []
+
+
+def test_admin_get_tickets(tickets) -> None:
+    all_tickets = client.get(
+        "/api/admin/tickets",
+        headers=PASSWORD_AUTH_HEADER,
+    )
+    assert all_tickets.status_code == Status.HTTP_200_OK
+    assert all_tickets.json() == tickets
+
+
+@parametrize_invalid_password_auth_header()
+def test_admin_get_tickets_invalid_header_fails(header):
+    ret = client.get("/api/admin/tickets", headers=header)
+    assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
+
+
+def test_admin_get_individual_ticket(tickets) -> None:
+    for ticket in tickets:
+        ret = client.get(
+            f"/api/admin/ticket/{ticket['id']}",
+            headers=PASSWORD_AUTH_HEADER,
+        )
+        assert ret.status_code == Status.HTTP_200_OK
+        assert ret.json() == ticket
+
+
+def test_admin_get_individual_ticket_missing(tickets) -> None:
+    ret = client.get(
+        f"/api/admin/ticket/{tickets[-1]['id'] + 1}",
+        headers=PASSWORD_AUTH_HEADER,
+    )
+    assert ret.status_code == Status.HTTP_404_NOT_FOUND
+
+
+@parametrize_invalid_password_auth_header()
+def test_admin_get_individual_ticket_invalid_header_fails(new_ticket, header):
+    ret = client.get(f"/api/admin/ticket/{new_ticket['id']}", headers=header)
+    assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
+
+
+def test_admin_delete_tickets(tickets) -> None:
+    to_delete = tickets.pop(len(tickets) // 2)
+    ret = client.delete(
+        f"/api/admin/ticket/{to_delete['id']}", headers=PASSWORD_AUTH_HEADER
+    )
+    assert ret.status_code == Status.HTTP_204_NO_CONTENT
+
+    all_tickets = client.get(
+        "/api/admin/tickets", headers=PASSWORD_AUTH_HEADER
+    ).json()
+    assert all_tickets == [
+        ticket | {"position": new_pos}
+        for new_pos, ticket in enumerate(tickets)
+    ]
+
+
+@parametrize_invalid_password_auth_header()
+def test_admin_delete_individual_ticket_invalid_header_fails(
+    new_ticket, header
+):
+    ret = client.delete(
+        f"/api/admin/ticket/{new_ticket['id']}", headers=header
     )
     assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
