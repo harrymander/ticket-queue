@@ -1,6 +1,6 @@
 import pytest
 
-from queuedb import QueueConnection
+from ticket_queue.queuedb import QueueConnection
 
 
 @pytest.fixture
@@ -79,7 +79,7 @@ def test_positions_change_after_removal(connection: QueueConnection):
     items = [connection.enqueue(f"item{i}") for i in range(3)]
     connection.remove(items[1].id)
     assert connection.get_all() == [
-        item.model_copy(update={'position': pos})
+        item.model_copy(update={"position": pos})
         for pos, item in enumerate((items[0], items[2]))
     ]
 

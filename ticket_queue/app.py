@@ -2,8 +2,8 @@ from typing import Annotated
 
 import fastapi
 
-from models import NewQueueEntry, QueueEntry
-from queuedb import QueueConnection
+from ticket_queue.models import NewQueueEntry, QueueEntry
+from ticket_queue.queuedb import QueueConnection
 
 
 class EntryNotFound(fastapi.HTTPException):
@@ -23,11 +23,11 @@ def _is_admin(authorization: OptionalHeader = None):
     if not authorization:
         raise Unauthorized()
 
-    split_val = authorization.split(' ', maxsplit=1)
+    split_val = authorization.split(" ", maxsplit=1)
     if (
-        len(split_val) < 2 or
-        split_val[0] != 'Password' or
-        split_val[1] != 'admin'
+        len(split_val) < 2
+        or split_val[0] != "Password"
+        or split_val[1] != "admin"
     ):
         raise Unauthorized()
 
@@ -43,10 +43,7 @@ def get_queue_connection():
         yield con
 
 
-Connection = Annotated[
-    QueueConnection,
-    fastapi.Depends(get_queue_connection)
-]
+Connection = Annotated[QueueConnection, fastapi.Depends(get_queue_connection)]
 
 
 @api.get("/entry/{id}")
@@ -71,8 +68,8 @@ def new_entry(new_entry: NewQueueEntry, connection: Connection) -> QueueEntry:
 
 
 def get_token_from_header(val: str) -> str | None:
-    split_val = val.split(' ', maxsplit=1)
-    if len(split_val) < 2 or split_val[0] != 'Token':
+    split_val = val.split(" ", maxsplit=1)
+    if len(split_val) < 2 or split_val[0] != "Token":
         return None
 
     return split_val[1] or None

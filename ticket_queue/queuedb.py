@@ -2,7 +2,7 @@ import sqlite3
 import uuid
 from os import PathLike
 
-from models import QueueEntry
+from ticket_queue.models import QueueEntry
 
 
 def gen_token() -> str:
@@ -16,7 +16,7 @@ class QueueConnection:
     def close(self) -> None:
         self.con.close()
 
-    def __enter__(self) -> 'QueueConnection':
+    def __enter__(self) -> "QueueConnection":
         return self
 
     def __exit__(self, *_) -> None:
@@ -34,7 +34,7 @@ class QueueConnection:
 
     def enqueue(self, name: str) -> QueueEntry:
         if not name:
-            raise ValueError('name must have a value')
+            raise ValueError("name must have a value")
 
         token = gen_token()
         with self.con:
@@ -47,7 +47,7 @@ class QueueConnection:
                 VALUES (?, ?)
                 RETURNING (SELECT count FROM count_query) AS position, id;
                 """,
-                (name, token)
+                (name, token),
             ).fetchone()
 
         return QueueEntry(name=name, id=id, token=token, position=position - 1)
@@ -58,13 +58,13 @@ class QueueConnection:
                 """
                 DELETE FROM queue WHERE ID = ?
                 """,
-                (id,)
+                (id,),
             )
 
     def get_all(self, *, limit: int | None = None) -> list[QueueEntry]:
         if limit is not None:
             if limit <= 0:
-                raise ValueError('limit must be greater than 0')
+                raise ValueError("limit must be greater than 0")
             limit_query = f"LIMIT {limit}"
         else:
             limit_query = ""
@@ -96,12 +96,16 @@ class QueueConnection:
                 )
                 WHERE id = ?
                 """,
-                (id,)
+                (id,),
             ).fetchone()
 
-        return QueueEntry(
-            name=ret[0],
-            token=ret[1],
-            position=ret[2] - 1,
-            id=id,
-        ) if ret else None
+        return (
+            QueueEntry(
+                name=ret[0],
+                token=ret[1],
+                position=ret[2] - 1,
+                id=id,
+            )
+            if ret
+            else None
+        )
