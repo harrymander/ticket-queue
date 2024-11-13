@@ -1,6 +1,6 @@
 import pytest
 
-from ticket_queue.queuedb import QueueConnection
+from ticket_queue.ticket_queue import QueueConnection
 
 
 @pytest.fixture

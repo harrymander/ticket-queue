@@ -17,12 +17,12 @@ def _non_empty_string_validator(val: str) -> str:
 NonEmptyString = Annotated[str, AfterValidator(_non_empty_string_validator)]
 
 
-class QueueEntry(BaseModel):
+class QueueTicket(BaseModel):
     id: int = Field(..., ge=1)
     name: NonEmptyString
     token: str = Field(..., min_length=1)
     position: int = Field(..., ge=0)
 
 
-class NewQueueEntry(BaseModel):
+class NewTicket(BaseModel):
     name: NonEmptyString

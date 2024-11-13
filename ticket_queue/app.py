@@ -2,13 +2,13 @@ from typing import Annotated
 
 import fastapi
 
-from ticket_queue.models import NewQueueEntry, QueueEntry
-from ticket_queue.queuedb import QueueConnection
+from ticket_queue.models import NewTicket, QueueTicket
+from ticket_queue.ticket_queue import QueueConnection
 
 
-class EntryNotFound(fastapi.HTTPException):
+class TicketNotFound(fastapi.HTTPException):
     def __init__(self):
-        super().__init__(status_code=404, detail="Entry not found")
+        super().__init__(status_code=404, detail="Ticket not found")
 
 
 class Unauthorized(fastapi.HTTPException):
@@ -46,25 +46,25 @@ def get_queue_connection():
 Connection = Annotated[QueueConnection, fastapi.Depends(get_queue_connection)]
 
 
-@api.get("/entry/{id}")
-def get_entry(
+@api.get("/ticket/{id}")
+def get_ticket(
     id: int,
     connection: Connection,
     token: str | None = None,
-) -> QueueEntry:
+) -> QueueTicket:
     if not token:
-        raise EntryNotFound()
+        raise TicketNotFound()
 
-    entry = connection.get(id)
-    if entry and entry.token == token:
-        return entry
+    ticket = connection.get(id)
+    if ticket and ticket.token == token:
+        return ticket
 
-    raise EntryNotFound()
+    raise TicketNotFound()
 
 
-@api.post("/entries", status_code=201)
-def new_entry(new_entry: NewQueueEntry, connection: Connection) -> QueueEntry:
-    return connection.enqueue(new_entry.name)
+@api.post("/tickets", status_code=201)
+def new_ticket(new_ticket: NewTicket, connection: Connection) -> QueueTicket:
+    return connection.enqueue(new_ticket.name)
 
 
 def get_token_from_header(val: str) -> str | None:
@@ -75,8 +75,8 @@ def get_token_from_header(val: str) -> str | None:
     return split_val[1] or None
 
 
-@api.delete("/entry/{id}", status_code=204)
-def delete_entry(
+@api.delete("/ticket/{id}", status_code=204)
+def delete_ticket(
     id: int,
     connection: Connection,
     authorization: OptionalHeader = None,
@@ -85,35 +85,35 @@ def delete_entry(
     if not token:
         raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
 
-    entry = connection.get(id)
-    if not entry:
-        raise EntryNotFound()
+    ticket = connection.get(id)
+    if not ticket:
+        raise TicketNotFound()
 
-    if entry.token != token:
+    if ticket.token != token:
         raise Unauthorized()
 
     connection.remove(id)
 
 
-@admin_api.get("/entries")
-def get_all_entries(
+@admin_api.get("/tickets")
+def get_all_tickets(
     connection: Connection,
     limit: Annotated[int | None, fastapi.Query(min=1)] = None,
-) -> list[QueueEntry]:
+) -> list[QueueTicket]:
     return connection.get_all(limit=limit)
 
 
-@admin_api.get("/entry/{id}")
-def admin_get_entry(id: int, connection: Connection) -> QueueEntry:
-    entry = connection.get(id)
-    if not entry:
-        raise EntryNotFound()
+@admin_api.get("/ticket/{id}")
+def admin_get_ticket(id: int, connection: Connection) -> QueueTicket:
+    ticket = connection.get(id)
+    if not ticket:
+        raise TicketNotFound()
 
-    return entry
+    return ticket
 
 
-@admin_api.delete("/entry/{id}", status_code=204)
-def admin_delete_entry(id: int, connection: Connection) -> None:
+@admin_api.delete("/ticket/{id}", status_code=204)
+def admin_delete_ticket(id: int, connection: Connection) -> None:
     connection.remove(id)
 
 
