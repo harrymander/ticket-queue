@@ -1,12 +1,27 @@
 import os
 from collections.abc import Sequence
+from typing import Literal
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+
+class PathOrUrl(BaseModel):
+    type: Literal["path", "url"]
+    value: str
+
+    @model_validator(mode="after")
+    def validate_model(self) -> "PathOrUrl":
+        if self.type == "url":
+            url = urlparse(self.value)
+            if not (url.scheme and url.netloc):
+                raise ValueError("invalid URL")
+        return self
 
 
 class Config(BaseModel):
     urls: Sequence[str] = Field(min_length=1)
-    frontend: str | None
+    frontend: PathOrUrl
     admin_password: str
     database: str
 

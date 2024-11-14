@@ -39,8 +39,7 @@ RUN_BACKEND_DEV = $(RUN_BACKEND) \
 .PHONY: dev-backend
 dev-backend:
 	$(RUN_BACKEND_DEV) \
-	--url 'http://$(FRONTEND_DEV_HOST):$(FRONTEND_DEV_PORT)' \
-	--no-frontend
+	--frontend 'http://$(FRONTEND_DEV_HOST):$(FRONTEND_DEV_PORT)'
 
 
 FRONTEND_BUILD_DIR = frontend/dist

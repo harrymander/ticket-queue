@@ -4,10 +4,33 @@ import socket
 import webbrowser
 from collections.abc import Sequence
 from tempfile import TemporaryDirectory
+from typing import cast
+from urllib.parse import urlparse
 
 import click
 
-from ticket_queue.config import Config, save_config_to_env
+from ticket_queue.config import Config, PathOrUrl, save_config_to_env
+
+
+class DirPathOrUrl(click.Path):
+    name = "PATH | URL"
+
+    def __init__(self):
+        super().__init__(
+            file_okay=False,
+            dir_okay=True,
+            exists=True,
+            readable=True,
+            writable=True,
+        )
+
+    def convert(self, value, param, ctx) -> PathOrUrl:  # type: ignore
+        parsed = urlparse(value)
+        if parsed.scheme and parsed.netloc:
+            return PathOrUrl(type="url", value=value)
+
+        path = super().convert(value, param, ctx)
+        return PathOrUrl(type="path", value=cast(str, path))
 
 
 class WritableFilePath(click.Path):
@@ -31,7 +54,7 @@ class WritableFilePath(click.Path):
         return value
 
 
-def get_packaged_frontend_dir() -> str | None:
+def get_packaged_frontend_dir() -> PathOrUrl | None:
     try:
         from ticket_queue._packaged_frontend import PACKAGE_DIR
     except ImportError:
@@ -40,7 +63,7 @@ def get_packaged_frontend_dir() -> str | None:
     if not os.path.isdir(PACKAGE_DIR):
         return None
 
-    return PACKAGE_DIR
+    return PathOrUrl(type="path", value="PACKAGE_DIR")
 
 
 def get_hostname(host: str) -> str | None:
@@ -75,8 +98,8 @@ def gen_random_password(nbytes: int) -> str:
 @click.option(
     "--url",
     "urls",
-    help="""URL(s) to display to user. Required if --no-frontend is used,
-    otherwise can be automatically set based off --host and --port.""",
+    help="""Frontend URL(s) to display to user. Automatically set off value of
+    --host and --port or --frontend if it is a URL.""",
     multiple=True,
 )
 @click.option(
@@ -92,20 +115,9 @@ def gen_random_password(nbytes: int) -> str:
 )
 @click.option(
     "--frontend",
-    type=click.Path(
-        file_okay=False,
-        dir_okay=True,
-        exists=True,
-        readable=True,
-    ),
-    help="""Path to frontend directory. If not provided, will use the bundled
-    frontend.""",
-)
-@click.option(
-    "--no-frontend",
-    is_flag=True,
-    help="""Do not serve the frontend. Use this option when you have a
-    separate server for the frontend (e.g. during development).""",
+    type=DirPathOrUrl(),
+    help="""Path to frontend directory or a URL from which the frontend is
+    being served. If not provided, will use the bundled frontend.""",
 )
 @click.option(
     "--admin-password",
@@ -140,8 +152,7 @@ def cli(
     urls: Sequence[str],
     workers: int,
     reload: bool,
-    frontend: str | None,
-    no_frontend,
+    frontend: PathOrUrl | None,
     admin_password: str | None,
     database: str | None,
     random_password_bytes: int,
@@ -150,10 +161,7 @@ def cli(
     if workers > 1 and reload:
         raise click.UsageError("Cannot use --reload with more than one worker")
 
-    if no_frontend:
-        if frontend is not None:
-            raise click.UsageError("Cannot use --no-frontend with --frontend")
-    elif frontend is None:
+    if frontend is None:
         frontend = get_packaged_frontend_dir()
         if not frontend:
             raise click.ClickException(
@@ -164,12 +172,11 @@ def cli(
                 "frontend with --frontend."
             )
 
-    if frontend:
-        urls = [*urls, *get_urls(host, port)]
-    elif not urls:
-        raise click.UsageError(
-            "At least one --url is required when using --no-frontend."
-        )
+    urls = list(urls)
+    if frontend.type == "path":
+        urls.extend(*get_urls(host, port))
+    else:
+        urls.append(frontend.value)
 
     if not database:
         tempdir = ctx.with_resource(TemporaryDirectory(prefix="ticket-queue"))

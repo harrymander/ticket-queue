@@ -6,7 +6,7 @@ from fastapi import status as Status
 from fastapi.testclient import TestClient
 
 from ticket_queue.api import api
-from ticket_queue.config import Config, get_config
+from ticket_queue.config import Config, PathOrUrl, get_config
 from ticket_queue.ticket_queue import QueueConnection
 
 client = TestClient(api)
@@ -22,7 +22,7 @@ def override_get_config(tmp_path: Path):
         database=database,
         urls=["url"],
         admin_password=PLAINTEXT_ADMIN_PASSWORD,
-        frontend=None,
+        frontend=PathOrUrl(type="path", value="don't care"),
     )
     with QueueConnection(database) as queue:
         queue.create()
