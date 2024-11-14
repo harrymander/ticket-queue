@@ -1,6 +1,7 @@
 import os
 import secrets
 import socket
+import webbrowser
 from collections.abc import Sequence
 from tempfile import TemporaryDirectory
 
@@ -126,6 +127,11 @@ def gen_random_password(nbytes: int) -> str:
     help="""Path to SQLite database file. If not provided, uses a temporary
     file that is deleted when the server exits.""",
 )
+@click.option(
+    "--browser/--no-browser",
+    default=True,
+    help="Automatically open a browser window to the admin page.",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -139,6 +145,7 @@ def cli(
     admin_password: str | None,
     database: str | None,
     random_password_bytes: int,
+    browser: bool,
 ) -> None:
     if workers > 1 and reload:
         raise click.UsageError("Cannot use --reload with more than one worker")
@@ -179,6 +186,10 @@ def cli(
     )
     save_config_to_env(config)
     print_startup_panel(config=config, reload=reload)
+
+    if browser:
+        webbrowser.open(f"{urls[0]}/admin")
+
     launch_server(
         host=host,
         port=port,
