@@ -5,6 +5,8 @@ from tempfile import TemporaryDirectory
 
 import click
 
+from ticket_queue.config import Config, save_config_to_env
+
 
 class WritableFilePath(click.Path):
     def __init__(self):
@@ -152,11 +154,23 @@ def cli(
         tempdir = ctx.with_resource(TemporaryDirectory(prefix="ticket-queue"))
         database = os.path.join(tempdir, "ticket_queue.db")
 
+    if not admin_password:
+        # TODO: auto-generate password
+        admin_password = ""
+
+    config = Config(
+        urls=urls,
+        frontend=frontend,
+        admin_password=admin_password,
+        database=database,
+    )
+    save_config_to_env(config)
+
     print_startup_panel(
         urls=urls,
         reload=reload,
         frontend=frontend,
-        admin_password=admin_password or "",  # TODO: auto-generate
+        admin_password=admin_password,
         database=database,
     )
 
@@ -207,6 +221,7 @@ The admin interface is located is available at:
 
 {frontend_notice}
 Database path: {database!r}
+Auto-reload is {'en' if reload else 'dis'}abled
     """.rstrip()
 
     print(Panel(text, title="Ticket queue"))
@@ -222,9 +237,10 @@ def launch_server(
     import uvicorn
 
     uvicorn.run(
-        "ticket_queue.app:app",
+        "ticket_queue.app:create_app",
         host=host,
         port=port,
         workers=workers,
         reload=reload,
+        factory=True,
     )
