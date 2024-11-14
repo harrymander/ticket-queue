@@ -11,3 +11,6 @@ wheels/
 
 # mypy deamon file
 .dmypy.json
+
+# Development database
+/.queue.dev.db
