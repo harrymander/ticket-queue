@@ -1,0 +1,222 @@
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import * as Api from "./api";
+
+function useTicketStorage() {
+  const TICKET_STORAGE_KEY = "@ticket-queue/ticket";
+
+  const [ticket, setTicket] = useState(() => {
+    const storeval = localStorage.getItem(TICKET_STORAGE_KEY);
+    if (!storeval) {
+      console.debug("No ticket in storage");
+      return null;
+    }
+
+    try {
+      const ticket = JSON.parse(storeval);
+      Api.validateTicket(ticket);
+      console.debug("Ticket found in storage.", ticket);
+      return ticket;
+    } catch (error) {
+      console.error("Invalid ticket in storage; clearing.", storeval, error);
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (ticket) {
+      localStorage.setItem(TICKET_STORAGE_KEY, JSON.stringify(ticket));
+    } else {
+      localStorage.removeItem(TICKET_STORAGE_KEY);
+    }
+  }, [ticket]);
+
+  return [ticket, setTicket];
+}
+
+function useTicket() {
+  const [ticket, setTicket] = useTicketStorage();
+  const [ticketPending, setTicketPending] = useState(false);
+  const [ticketError, setTicketError] = useState(null);
+  const intervalRef = useRef();
+
+  useEffect(() => {
+    if (ticket) {
+      intervalRef.current = setInterval(() => {
+        Api.fetchTicket(ticket.id, ticket.token)
+          .then((ret) => {
+            if (ret.ok) {
+              return ret.json();
+            }
+
+            console.info("Ticket not available on remote server, clearing");
+            setTicket(null);
+          })
+          .then(setTicket);
+      }, 1000);
+      return () => clearInterval(intervalRef.current);
+    }
+    clearInterval(intervalRef.current);
+  }, [ticket, setTicket]);
+
+  function createTicket(name) {
+    if (ticket) {
+      console.error("Ticket already exists!");
+      return;
+    }
+
+    setTicketPending(true);
+    setTicketError(null);
+    Api.newTicket(name)
+      .then((ret) => {
+        setTicketPending(false);
+        if (ret.ok) {
+          return ret.json();
+        }
+        const error = "error creating ticket";
+        console.error(error);
+        setTicketError(error);
+      })
+      .then((ticket) => {
+        console.info("New ticket", ticket);
+        setTicket(ticket);
+      });
+  }
+
+  function deleteTicket() {
+    if (!ticket) {
+      console.error("No ticket to delete!");
+      return;
+    }
+
+    setTicketPending(true);
+    setTicketError(null);
+    Api.deleteTicket(ticket.id, ticket.token).then(() => {
+      // TODO: at the moment we are just removing the ticket if fails...
+      // maybe do something else depending on the return type (404 vs 401
+      // etc.)
+      setTicket(null);
+      setTicketPending(false);
+    });
+  }
+
+  return {
+    ticket,
+    ticketPending,
+    ticketError,
+    createTicket,
+    deleteTicket,
+  };
+}
+
+const TicketContext = createContext();
+
+function useTicketContext() {
+  return useContext(TicketContext);
+}
+
+function waitTimeStringMinutes(timestamp) {
+  const minutes = Math.floor((Date.now() / 1000 - timestamp) / 60);
+  return minutes < 1 ? "< 1" : minutes.toString();
+}
+
+function ordinalString(number) {
+  const s = number.toString();
+  let suffix = "th";
+  switch (s[s.length - 1]) {
+    case "1":
+      suffix = "st";
+      break;
+    case "2":
+      suffix = "nd";
+      break;
+    case "3":
+      suffix = "rd";
+      break;
+    default:
+      break;
+  }
+  return `${s}${suffix}`;
+}
+
+function TicketInfo({ ticket }) {
+  return (
+    <div className="ticket-info">
+      <p className="ticket-name">{ticket.name}</p>
+      <p className="ticket-position">
+        You are{" "}
+        <span className="ticket-position-ordinal">
+          {ordinalString(ticket.position + 1)}
+        </span>{" "}
+        in the queue.
+      </p>
+      <p className="ticket-wait-time">
+        You have been waiting for {waitTimeStringMinutes(ticket.timestamp)} min.
+      </p>
+    </div>
+  );
+}
+
+function HasTicket() {
+  const { ticket, deleteTicket, ticketPending, ticketError } =
+    useTicketContext();
+
+  return (
+    <>
+      <TicketInfo ticket={ticket} />
+      {ticketPending ? (
+        <p>Deleting...</p>
+      ) : (
+        <button onClick={deleteTicket}>Leave queue</button>
+      )}
+      {ticketError && <p className="ticket-delete-error">{ticketError}</p>}
+    </>
+  );
+}
+
+function TicketCreator() {
+  const { createTicket, ticketPending, ticketError } = useTicketContext();
+  const [value, setValue] = useState("");
+  const valueTrimmed = value.trim();
+
+  if (ticketPending) {
+    return <p>Creating ticket...</p>;
+  }
+
+  function submit() {
+    if (valueTrimmed) {
+      createTicket(valueTrimmed);
+    }
+  }
+
+  return (
+    <div className="create-ticket">
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            submit();
+          }
+        }}
+      />
+      <button disabled={valueTrimmed === ""} onClick={submit}>
+        Create
+      </button>
+      {ticketError && <p className="create-ticket-error">{ticketError}</p>}
+    </div>
+  );
+}
+
+function App() {
+  const { ticket } = useTicketContext();
+  return ticket ? HasTicket() : TicketCreator();
+}
+
+export default function Ticket() {
+  const ticket = useTicket();
+  return (
+    <TicketContext.Provider value={ticket}>
+      <App />
+    </TicketContext.Provider>
+  );
+}
