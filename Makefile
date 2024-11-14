@@ -20,6 +20,8 @@ help:
 	@echo "  dev-backend-frontend  Build frontend and run backend dev server that serves the frontend"
 	@echo "  frontend              Build the frontend"
 	@echo "  preview               Build frontend and run server in production mode"
+	@echo "  preview               Build frontend and run server in production mode"
+	@echo "  clean                 Clean frontend build outputs and dev server artifacts"
 	@echo "  help                  Show this help"
 
 
@@ -40,14 +42,16 @@ dev-backend:
 	--no-frontend
 
 
+FRONTEND_BUILD_DIR = frontend/dist
+
 .PHONY: dev-backend-frontend
 dev-backend-frontend: frontend
-	$(RUN_BACKEND_DEV) --frontend frontend/dist
+	$(RUN_BACKEND_DEV) --frontend $(FRONTEND_BUILD_DIR)
 
 
 .PHONY: preview
 preview: frontend
-	$(RUN_BACKEND) --frontend frontend/dist
+	$(RUN_BACKEND) --frontend $(FRONTEND_BUILD_DIR)
 
 
 .PHONY: dev-frontend
@@ -62,3 +66,8 @@ dev-frontend:
 .PHONY: frontend
 frontend:
 	cd frontend && npm run build
+
+
+.PHONY: clean
+clean:
+	rm -rf $(FRONTEND_BUILD_DIR) $(DEV_DB_PATH)
