@@ -551,6 +551,7 @@ name = "ticket-queue"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "click" },
     { name = "fastapi", extra = ["standard"] },
     { name = "pydantic" },
 ]
@@ -565,6 +566,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click", specifier = ">=8.1.7" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.5" },
     { name = "pydantic", specifier = ">=2.9.2" },
 ]
