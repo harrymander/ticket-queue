@@ -111,7 +111,11 @@ function useTicket() {
 const TicketContext = createContext();
 
 function useTicketContext() {
-  return useContext(TicketContext);
+  const ticket = useContext(TicketContext);
+  if (!ticket) {
+    throw Error("useTicketContext must be called inside a TicketContext");
+  }
+  return ticket;
 }
 
 function waitTimeStringMinutes(timestamp) {

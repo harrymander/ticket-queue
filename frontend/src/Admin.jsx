@@ -1,27 +1,7 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { fetchAdminApi } from "./api";
 
-function useAdminPassword() {
-  const PASSWORD_STORAGE_KEY = "@ticket-queue/password";
-  const [password, setPassword] = useState(() =>
-    localStorage.getItem(PASSWORD_STORAGE_KEY),
-  );
-  useEffect(() => {
-    if (password) {
-      localStorage.setItem(PASSWORD_STORAGE_KEY, password);
-    } else {
-      localStorage.removeItem(PASSWORD_STORAGE_KEY);
-    }
-  }, [password]);
-
-  return [password, setPassword];
-}
-
-function LoggedIn() {
-  return <p>Logged in!</p>;
-}
-
-function LogIn({ setPassword }) {
+function PasswordEntry({ logIn }) {
   const [passwordInput, setPasswordInput] = useState("");
   const [loginState, setLoginState] = useState("logged-out");
 
@@ -30,7 +10,7 @@ function LogIn({ setPassword }) {
     setPasswordInput("");
     fetchAdminApi("tickets", passwordInput).then((r) => {
       if (r.status == 200) {
-        setPassword(passwordInput);
+        logIn(passwordInput);
       } else if (r.status === 401) {
         setLoginState("invalid-password");
       } else {
@@ -73,16 +53,127 @@ function LogIn({ setPassword }) {
   );
 }
 
-export default function Admin() {
-  const [password, setPassword] = useAdminPassword();
-  if (password) {
-    return (
-      <>
-        <button onClick={() => setPassword(null)}>Log out</button>
-        <LoggedIn password={password} />
-      </>
+function useAuth() {
+  const PASSWORD_STORAGE_KEY = "@ticket-queue/password";
+  const [password, setPassword] = useState(() => {
+    const password = localStorage.getItem(PASSWORD_STORAGE_KEY);
+    if (password) {
+      console.debug("Found password in localStorage");
+    } else {
+      console.debug("No password saved in localStorage");
+    }
+    return password;
+  });
+  useEffect(() => {
+    if (password) {
+      localStorage.setItem(PASSWORD_STORAGE_KEY, password);
+    } else {
+      localStorage.removeItem(PASSWORD_STORAGE_KEY);
+    }
+  }, [password]);
+
+  return [password, setPassword];
+}
+
+const AuthContext = createContext();
+
+function useAuthContext() {
+  const { password, setPassword } = useContext(AuthContext);
+  if (!password) {
+    throw Error(
+      "useAuthContext must be called inside an authenticated context",
     );
   }
 
-  return <LogIn setPassword={setPassword} />;
+  function logOut() {
+    setPassword(null);
+  }
+
+  async function fetchAdminWithAuth(endpoint, payload = {}) {
+    return fetchAdminApi(endpoint, password, payload).then((ret) => {
+      if (ret.status === 401) {
+        console.error("No longer authenticated!");
+        logOut();
+      } else {
+        return ret;
+      }
+    });
+  }
+
+  return { password, logOut, fetchAdminWithAuth };
+}
+
+function TicketListItem({ ticket }) {
+  return <li className="ticket-list-item">{ticket.name}</li>;
+}
+
+function TicketsList({ tickets }) {
+  return (
+    <ul className="tickets-list">
+      {tickets.map((ticket) => (
+        <TicketListItem key={ticket.token} ticket={ticket} />
+      ))}
+    </ul>
+  );
+}
+
+function TicketsManager() {
+  const { fetchAdminWithAuth } = useAuthContext();
+  const [tickets, setTickets] = useState(null);
+  const [getTicketsError, setGetTicketsError] = useState(null);
+
+  useEffect(() => {
+    function fetchTickets() {
+      fetchAdminWithAuth("tickets")
+        .then((ret) => {
+          if (ret.ok) {
+            return ret.json();
+          }
+
+          const error = "Error getting tickets";
+          console.error(error);
+          setGetTicketsError(error);
+        })
+        .then((tickets) => {
+          setTickets(tickets);
+          setGetTicketsError(null);
+        });
+    }
+
+    console.debug("Fetching tickets...");
+    fetchTickets();
+    const id = setInterval(fetchTickets, 1000);
+    return () => clearInterval(id);
+  }, [setTickets, setGetTicketsError, fetchAdminWithAuth]);
+
+  if (getTicketsError) {
+    return <p>Error getting tickets!</p>;
+  }
+
+  if (!tickets || tickets.length === 0) {
+    return <p>No tickets</p>;
+  }
+
+  return <TicketsList tickets={tickets} />;
+}
+
+function AdminDashboard() {
+  const { logOut } = useAuthContext();
+  return (
+    <>
+      <button onClick={logOut}>Log out</button>
+      <TicketsManager />
+    </>
+  );
+}
+
+export default function Admin() {
+  const [password, setPassword] = useAuth();
+  return password ? (
+    <AuthContext.Provider value={{ password, setPassword }}>
+      <AdminDashboard />
+    </AuthContext.Provider>
+  ) : (
+    <PasswordEntry logIn={setPassword} />
+  );
 }
