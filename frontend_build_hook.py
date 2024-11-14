@@ -1,5 +1,6 @@
 import os
 import subprocess
+from dataclasses import dataclass
 from sys import stderr
 from tempfile import TemporaryDirectory
 
@@ -12,6 +13,35 @@ class NpmRunner:
 
     def run(self, *args) -> None:
         subprocess.run(["npm", *args], check=True, cwd=self.root)
+
+
+@dataclass
+class Config:
+    package_module: str
+    package_dir: str
+    node_root: str
+
+    @classmethod
+    def from_config(cls, config: dict) -> "Config":
+        kw = {}
+        for key in cls.__dataclass_fields__.keys():
+            config_key = key.replace("_", "-")
+            val = config.get(config_key)
+            if val is None:
+                raise ValueError(f"'{config_key}' is required in config")
+            kw[key] = val
+
+        return cls(**kw)
+
+
+_MODULE_TEMPLATE = """\
+import os.path
+
+PACKAGE_DIR = os.path.join(
+    os.path.dirname(__file__),
+    {package_dir!r}
+)
+"""
 
 
 class FrontendBuilder(BuildHookInterface):
@@ -30,7 +60,7 @@ class FrontendBuilder(BuildHookInterface):
         return config
 
     def _init_sdist(
-        self, package_dir: str, version: str, build_data: dict
+        self, config: Config, version: str, build_data: dict
     ) -> None:
         npm = NpmRunner(self._get_config("node-root"))
 
@@ -38,7 +68,8 @@ class FrontendBuilder(BuildHookInterface):
         npm.run("ls")
 
         self.__tempdir = TemporaryDirectory()
-        outdir = os.path.join(self.__tempdir.name, package_dir)
+        tempdir = self.__tempdir.name
+        outdir = os.path.join(tempdir, config.package_dir)
         os.makedirs(outdir, exist_ok=False)
         self._log(f"Building frontend to {outdir}...")
         npm.run("run", "build", "--", "--emptyOutDir", "--outDir", outdir)
@@ -49,31 +80,45 @@ class FrontendBuilder(BuildHookInterface):
             if version == "editable"
             else "force_include"
         )
-        build_data[include_key][outdir] = package_dir
+        build_data[include_key][outdir] = config.package_dir
 
-    def _init_wheel(self, package_dir: str, version: str) -> None:
+        package_module = os.path.join(tempdir, config.package_module)
+        relpath = os.path.relpath(
+            config.package_dir, os.path.dirname(config.package_module)
+        )
+        with open(package_module, "w") as f:
+            f.write(_MODULE_TEMPLATE.format(package_dir=relpath))
+
+        build_data[include_key][package_module] = config.package_module
+
+    def _check_wheel_path(self, path: str, *, is_dir: bool = False) -> None:
+        staging = self.root
+        check = os.path.isdir if is_dir else os.path.exists
+        if check(os.path.join(staging, path)):
+            return
+
+        ptype = "directory" if is_dir else "path"
+        raise ValueError(
+            f"No {ptype} '{path}' in staging directory '{staging}. "
+            "Try building wheel from sdist."
+        )
+
+    def _init_wheel(self, config: Config, version: str) -> None:
         if version == "editable":
             self._log("Skipping frontend build for editable package")
             return
 
-        # Just check that the package dir exists in staging directory
-        staging = self.root
-        target = os.path.join(staging, package_dir)
-        self._log(f"Checking that '{target}' directory exists")
-        if os.path.isdir(target):
-            return
-        raise ValueError(
-            f"No directory '{package_dir}' in staging directory '{staging}'. "
-            "Try building wheel from sdist."
-        )
+        # Just check that the generated files have been created
+        self._check_wheel_path(config.package_module)
+        self._check_wheel_path(config.package_dir, is_dir=True)
 
     def initialize(self, version: str, build_data: dict) -> None:
-        package_dir = self._get_config("package-dir")
+        config = Config.from_config(self.config)
         target = self.target_name
         if target == "sdist":
-            self._init_sdist(package_dir, version, build_data)
+            self._init_sdist(config, version, build_data)
         elif target == "wheel":
-            self._init_wheel(package_dir, version)
+            self._init_wheel(config, version)
         else:
             raise ValueError(f"Unsupported target: {target}")
 

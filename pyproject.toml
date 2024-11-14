@@ -20,6 +20,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.hooks.custom]
 path = "frontend_build_hook.py"
+package-module = "ticket_queue/_packaged_frontend.py"
 package-dir = "ticket_queue/frontend"
 node-root = "frontend"
 
