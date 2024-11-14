@@ -174,7 +174,7 @@ def cli(
 
     urls = list(urls)
     if frontend.type == "path":
-        urls.extend(*get_urls(host, port))
+        urls.extend(get_urls(host, port))
     else:
         urls.append(frontend.value)
 
