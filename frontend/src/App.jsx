@@ -1,35 +1,84 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { fetchAdminApi } from "./api";
 
-function App() {
-  const [count, setCount] = useState(0)
+function useAdminPassword() {
+  const PASSWORD_STORAGE_KEY = "@ticket-queue/password";
+  const [password, setPassword] = useState(() =>
+    localStorage.getItem(PASSWORD_STORAGE_KEY),
+  );
+  useEffect(() => {
+    if (password) {
+      localStorage.setItem(PASSWORD_STORAGE_KEY, password);
+    } else {
+      localStorage.removeItem(PASSWORD_STORAGE_KEY);
+    }
+  }, [password]);
+
+  return [password, setPassword];
+}
+
+function LoggedIn() {
+  return <p>Logged in!</p>;
+}
+
+function LogIn({ setPassword }) {
+  const [passwordInput, setPasswordInput] = useState("");
+  const [loginState, setLoginState] = useState("logged-out");
+
+  function login() {
+    setLoginState("logging-in");
+    fetchAdminApi("tickets", passwordInput).then((r) => {
+      if (r.status == 200) {
+        setPassword(passwordInput);
+      } else if (r.status === 401) {
+        setLoginState("invalid-password");
+      } else {
+        setLoginState("unknown-error");
+      }
+    });
+  }
+
+  if (loginState === "logging-in") {
+    return <p>Logging in...</p>;
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
+      <input
+        placeholder="Admin password"
+        type="password"
+        onChange={(e) => setPasswordInput(e.target.value)}
+        value={passwordInput}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && passwordInput) {
+            login();
+          }
+        }}
+      />
+      <button disabled={!passwordInput} onClick={login}>
+        Log in
+      </button>
+      {loginState !== "logged-out" && (
         <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
+          {loginState === "invalid-password"
+            ? "Incorrect password!"
+            : "An unknown error occurrred!"}
         </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      )}
     </>
-  )
+  );
 }
 
-export default App
+export default function App() {
+  const [password, setPassword] = useAdminPassword();
+  if (password) {
+    return (
+      <>
+        <button onClick={() => setPassword(null)}>Log out</button>
+        <LoggedIn password={password} />
+      </>
+    );
+  }
+
+  return <LogIn setPassword={setPassword} />;
+}
