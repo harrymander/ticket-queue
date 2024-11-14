@@ -27,6 +27,7 @@ function LogIn({ setPassword }) {
 
   function login() {
     setLoginState("logging-in");
+    setPasswordInput("");
     fetchAdminApi("tickets", passwordInput).then((r) => {
       if (r.status == 200) {
         setPassword(passwordInput);
@@ -44,20 +45,23 @@ function LogIn({ setPassword }) {
 
   return (
     <>
-      <input
-        placeholder="Admin password"
-        type="password"
-        onChange={(e) => setPasswordInput(e.target.value)}
-        value={passwordInput}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && passwordInput) {
-            login();
-          }
-        }}
-      />
-      <button disabled={!passwordInput} onClick={login}>
-        Log in
-      </button>
+      <form>
+        <input
+          placeholder="Admin password"
+          type="password"
+          onChange={(e) => setPasswordInput(e.target.value)}
+          value={passwordInput}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && passwordInput) {
+              login();
+            }
+          }}
+          autoComplete="off"
+        />
+        <button disabled={!passwordInput} onClick={login}>
+          Log in
+        </button>
+      </form>
       {loginState !== "logged-out" && (
         <p>
           {loginState === "invalid-password"
