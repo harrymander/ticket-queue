@@ -38,3 +38,10 @@ line-length = 79
 
 [tool.ruff.lint]
 select = ["F", "E", "W", "I", "UP"]
+
+[[tool.mypy.overrides]]
+module = [
+    "hatchling.*",
+    "ticket_queue._packaged_frontend",
+]
+ignore_missing_imports = true
