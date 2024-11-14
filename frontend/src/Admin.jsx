@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { fetchAdminApi } from "./api";
 
 function PasswordEntry({ logIn }) {
@@ -85,11 +85,9 @@ function useAuthContext() {
     );
   }
 
-  function logOut() {
-    setPassword(null);
-  }
+  const logOut = useCallback(() => setPassword(null), [setPassword]);
 
-  async function fetchAdminWithAuth(endpoint, payload = {}) {
+  const fetchAdminWithAuth = useCallback(async (endpoint, payload = {}) => {
     return fetchAdminApi(endpoint, password, payload).then((ret) => {
       if (ret.status === 401) {
         console.error("No longer authenticated!");
@@ -98,7 +96,7 @@ function useAuthContext() {
         return ret;
       }
     });
-  }
+  }, [password, logOut]);
 
   return { password, logOut, fetchAdminWithAuth };
 }
@@ -122,6 +120,7 @@ function TicketsManager() {
   const [tickets, setTickets] = useState(null);
   const [getTicketsError, setGetTicketsError] = useState(null);
 
+
   useEffect(() => {
     function fetchTickets() {
       fetchAdminWithAuth("tickets")
@@ -139,12 +138,11 @@ function TicketsManager() {
           setGetTicketsError(null);
         });
     }
-
     console.debug("Fetching tickets...");
     fetchTickets();
     const id = setInterval(fetchTickets, 1000);
     return () => clearInterval(id);
-  }, [setTickets, setGetTicketsError, fetchAdminWithAuth]);
+  }, [fetchAdminWithAuth, setGetTicketsError, setTickets]);
 
   if (getTicketsError) {
     return <p>Error getting tickets!</p>;
