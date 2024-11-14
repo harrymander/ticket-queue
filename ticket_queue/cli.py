@@ -1,4 +1,5 @@
 import os
+import secrets
 import socket
 from collections.abc import Sequence
 from tempfile import TemporaryDirectory
@@ -58,6 +59,10 @@ def get_urls(host: str, port: int) -> list[str]:
     return urls
 
 
+def gen_random_password(nbytes: int) -> str:
+    return secrets.token_hex(nbytes)
+
+
 @click.command(context_settings={"show_default": True})
 @click.option("--host", default="0.0.0.0")
 @click.option(
@@ -107,6 +112,14 @@ def get_urls(host: str, port: int) -> list[str]:
     randomly generated.""",
 )
 @click.option(
+    "--random-password-bytes",
+    help="""Number of bytes to generate password. Can also be set via the
+    RAND_PASSWORD_BYTES env var.""",
+    default=3,
+    type=click.IntRange(min=1),
+    envvar="RAND_PASSWORD_BYTES",
+)
+@click.option(
     "--database",
     "--db",
     type=WritableFilePath(),
@@ -125,6 +138,7 @@ def cli(
     no_frontend,
     admin_password: str | None,
     database: str | None,
+    random_password_bytes: int,
 ) -> None:
     if workers > 1 and reload:
         raise click.UsageError("Cannot use --reload with more than one worker")
@@ -155,8 +169,7 @@ def cli(
         database = os.path.join(tempdir, "ticket_queue.db")
 
     if not admin_password:
-        # TODO: auto-generate password
-        admin_password = ""
+        admin_password = gen_random_password(random_password_bytes)
 
     config = Config(
         urls=urls,
