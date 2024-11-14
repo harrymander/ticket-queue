@@ -178,15 +178,7 @@ def cli(
         database=database,
     )
     save_config_to_env(config)
-
-    print_startup_panel(
-        urls=urls,
-        reload=reload,
-        frontend=frontend,
-        admin_password=admin_password,
-        database=database,
-    )
-
+    print_startup_panel(config=config, reload=reload)
     launch_server(
         host=host,
         port=port,
@@ -195,30 +187,23 @@ def cli(
     )
 
 
-def print_startup_panel(
-    *,
-    urls: Sequence[str],
-    reload: bool,
-    frontend: None | str,
-    admin_password: str,
-    database: str,
-):
+def print_startup_panel(*, config: Config, reload: bool):
     from rich import print
     from rich.panel import Panel
 
-    admin_urls = "\n  ".join(f"{u}/admin" for u in urls)
-    if admin_password:
+    admin_urls = "\n  ".join(f"{u}/admin" for u in config.urls)
+    if config.admin_password:
         password_notice = (
             "Admin password: "
-            f"[black on yellow]{admin_password}[/black on yellow]"
+            f"[black on yellow]{config.admin_password}[/black on yellow]"
         )
     else:
         password_notice = (
             "[bold red]Warning: there is no admin password![/bold red]"
         )
 
-    if frontend:
-        frontend_notice = f"Frontend path: {frontend!r}"
+    if config.frontend:
+        frontend_notice = f"Frontend path: {config.frontend!r}"
     else:
         frontend_notice = (
             "[yellow]Note:[/yellow] not serving frontend. "
@@ -233,7 +218,7 @@ The admin interface is located is available at:
 {password_notice}
 
 {frontend_notice}
-Database path: {database!r}
+Database path: {config.database!r}
 Auto-reload is {'en' if reload else 'dis'}abled
     """.rstrip()
 
