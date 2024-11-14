@@ -2,7 +2,6 @@ BACKEND_HOST ?= localhost
 BACKEND_PORT ?= 8889
 FRONTEND_DEV_HOST ?= localhost
 FRONTEND_DEV_PORT ?= 7777
-DEV_DB_PATH ?= .queue.dev.db
 DEV_ADMIN_PASSWORD ?= admin
 
 
@@ -30,9 +29,12 @@ RUN_BACKEND = uv run --locked ticket-queue \
 	--host '$(BACKEND_HOST)' \
 	--port $(BACKEND_PORT)
 
+ifneq ($(DEV_DB_PATH),)
+	DEV_DB_ARG = --database '$(DEV_DB_PATH)'
+endif
 RUN_BACKEND_DEV = $(RUN_BACKEND) \
 	--reload \
-	--database '$(DEV_DB_PATH)' \
+	$(DEV_DB_ARG) \
 	--admin-password $(DEV_ADMIN_PASSWORD)
 
 
