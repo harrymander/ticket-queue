@@ -97,8 +97,9 @@ def gen_random_password(nbytes: int) -> str:
 @click.option(
     "--url",
     "urls",
-    help="""Frontend URL(s) to display to user. Automatically set off value of
-    --host and --port or --frontend if it is a URL.""",
+    help="""Frontend URL(s) to display to user. If not provided, the frontend
+    URL will be determined based off the values of --host and --port or
+    --frontend if a URL is passed.""",
     multiple=True,
 )
 @click.option(
@@ -110,7 +111,8 @@ def gen_random_password(nbytes: int) -> str:
 @click.option(
     "--reload/--no-reload",
     default=False,
-    help="Auto-reload the server on file change. Use only for dev mode.",
+    help="""Auto-reload the server on file change. Use only for dev mode; only
+    one worker can be used if enabled.""",
 )
 @click.option(
     "--frontend",
