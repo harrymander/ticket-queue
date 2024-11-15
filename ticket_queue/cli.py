@@ -1,3 +1,4 @@
+import math
 import os
 import secrets
 import socket
@@ -82,8 +83,11 @@ def get_urls(host: str, port: int) -> list[str]:
     return urls
 
 
-def gen_random_password(nbytes: int) -> str:
-    return secrets.token_hex(nbytes)
+def gen_random_password(nchars: int) -> str:
+    return secrets.token_hex(math.ceil(nchars / 2))[:nchars]
+
+
+DEFAULT_RANDOM_PASSWORD_LEN = 6
 
 
 @click.command(context_settings={"show_default": True})
@@ -128,12 +132,13 @@ def gen_random_password(nbytes: int) -> str:
     randomly generated.""",
 )
 @click.option(
-    "--random-password-bytes",
-    help="""Number of bytes to generate password. Can also be set via the
-    RAND_PASSWORD_BYTES env var.""",
-    default=3,
+    "--random-password-len",
+    help=f"""Length of randomly-generated password. Can also be set via the
+    RANDOM_PASSWORD_LEN env var. The default length
+    ({DEFAULT_RANDOM_PASSWORD_LEN}) is probably not very secure...""",
+    default=DEFAULT_RANDOM_PASSWORD_LEN,
     type=click.IntRange(min=1),
-    envvar="RAND_PASSWORD_BYTES",
+    envvar="RANDOM_PASSWORD_LEN",
 )
 @click.option(
     "--database",
@@ -163,7 +168,7 @@ def cli(
     frontend: PathOrUrl | None,
     admin_password: str | None,
     database: str | None,
-    random_password_bytes: int,
+    random_password_len: int,
     browser: bool,
     api_docs: bool,
 ) -> None:
@@ -192,7 +197,7 @@ def cli(
         database = os.path.join(tempdir, "ticket_queue.db")
 
     if not admin_password:
-        admin_password = gen_random_password(random_password_bytes)
+        admin_password = gen_random_password(random_password_len)
 
     config = Config(
         urls=urls,
