@@ -1,14 +1,20 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { fetchAdminApi } from "./api";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import * as Api from "./api";
 
 function PasswordEntry({ logIn }) {
   const [passwordInput, setPasswordInput] = useState("");
   const [loginState, setLoginState] = useState("logged-out");
 
-  function login() {
+  function tryLogIn() {
     setLoginState("logging-in");
     setPasswordInput("");
-    fetchAdminApi("tickets", passwordInput).then((r) => {
+    Api.fetchAdminApi("tickets", passwordInput).then((r) => {
       if (r.status == 200) {
         logIn(passwordInput);
       } else if (r.status === 401) {
@@ -33,12 +39,12 @@ function PasswordEntry({ logIn }) {
           value={passwordInput}
           onKeyDown={(e) => {
             if (e.key === "Enter" && passwordInput) {
-              login();
+              tryLogIn();
             }
           }}
           autoComplete="off"
         />
-        <button disabled={!passwordInput} onClick={login}>
+        <button disabled={!passwordInput} onClick={tryLogIn}>
           Log in
         </button>
       </form>
@@ -87,16 +93,19 @@ function useAuthContext() {
 
   const logOut = useCallback(() => setPassword(null), [setPassword]);
 
-  const fetchAdminWithAuth = useCallback(async (endpoint, payload = {}) => {
-    return fetchAdminApi(endpoint, password, payload).then((ret) => {
-      if (ret.status === 401) {
-        console.error("No longer authenticated!");
-        logOut();
-      } else {
-        return ret;
-      }
-    });
-  }, [password, logOut]);
+  const fetchAdminWithAuth = useCallback(
+    async (endpoint, payload = {}) => {
+      return Api.fetchAdminApi(endpoint, password, payload).then((ret) => {
+        if (ret.status === 401) {
+          console.error("No longer authenticated!");
+          logOut();
+        } else {
+          return ret;
+        }
+      });
+    },
+    [password, logOut],
+  );
 
   return { password, logOut, fetchAdminWithAuth };
 }
@@ -120,10 +129,12 @@ function TicketsManager() {
   const [tickets, setTickets] = useState(null);
   const [getTicketsError, setGetTicketsError] = useState(null);
 
-
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     function fetchTickets() {
-      fetchAdminWithAuth("tickets")
+      fetchAdminWithAuth("tickets", { signal })
         .then((ret) => {
           if (ret.ok) {
             return ret.json();
@@ -138,10 +149,14 @@ function TicketsManager() {
           setGetTicketsError(null);
         });
     }
+
     console.debug("Fetching tickets...");
     fetchTickets();
     const id = setInterval(fetchTickets, 1000);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      abortController.abort();
+    };
   }, [fetchAdminWithAuth, setGetTicketsError, setTickets]);
 
   if (getTicketsError) {

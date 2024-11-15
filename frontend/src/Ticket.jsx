@@ -40,20 +40,28 @@ function useTicket() {
   const intervalRef = useRef();
 
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     if (ticket) {
       intervalRef.current = setInterval(() => {
-        Api.fetchTicket(ticket.id, ticket.token)
+        Api.fetchTicket(ticket.id, ticket.token, { signal })
           .then((ret) => {
             if (ret.ok) {
               return ret.json();
             }
 
+            // TODO: probably should be more specific with the errors we check
+            // (e.g. 500 errors)
             console.info("Ticket not available on remote server, clearing");
             setTicket(null);
           })
           .then(setTicket);
       }, 1000);
-      return () => clearInterval(intervalRef.current);
+      return () => {
+        clearInterval(intervalRef.current);
+        abortController.abort();
+      };
     }
     clearInterval(intervalRef.current);
   }, [ticket, setTicket]);
