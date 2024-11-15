@@ -123,11 +123,11 @@ function TicketListItem({ ticket }) {
 
 function TicketsList({ tickets }) {
   return (
-    <ul className="tickets-list">
+    <ol className="tickets-list">
       {tickets.map((ticket) => (
         <TicketListItem key={ticket.token} ticket={ticket} />
       ))}
-    </ul>
+    </ol>
   );
 }
 
