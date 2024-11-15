@@ -145,6 +145,11 @@ def gen_random_password(nbytes: int) -> str:
     default=True,
     help="Automatically open a browser window to the admin page.",
 )
+@click.option(
+    "--api-docs/--no-api-docs",
+    default=True,
+    help="""Enable the API documentation under /api/docs.""",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -158,6 +163,7 @@ def cli(
     database: str | None,
     random_password_bytes: int,
     browser: bool,
+    api_docs: bool,
 ) -> None:
     if workers > 1 and reload:
         raise click.UsageError("Cannot use --reload with more than one worker")
@@ -191,6 +197,7 @@ def cli(
         frontend=frontend,
         admin_password=admin_password,
         database=database,
+        enable_api_docs=api_docs,
     )
     save_config_to_env(config)
     print_startup_panel(config=config, reload=reload)
@@ -204,6 +211,10 @@ def cli(
         workers=workers,
         reload=reload,
     )
+
+
+def enabled_str(enabled: bool) -> str:
+    return "enabled" if enabled else "disabled"
 
 
 def print_startup_panel(*, config: Config, reload: bool):
@@ -230,7 +241,8 @@ The admin interface is located is available at:
 
 Frontend: {config.frontend.value}
 Database path: {config.database}
-Auto-reload is {'en' if reload else 'dis'}abled
+Auto-reload is {enabled_str(reload)}
+API docs are {enabled_str(config.enable_api_docs)}
     """.rstrip()
 
     print(Panel(text, title="Ticket queue"))

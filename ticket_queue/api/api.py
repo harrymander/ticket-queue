@@ -11,7 +11,20 @@ from ticket_queue.api.dependencies import QueueConnector, TicketId, TokenQuery
 from ticket_queue.api.errors import TicketNotFound, Unauthorized
 from ticket_queue.models import NewTicket, QueueTicket
 
-api = FastAPI()
+
+def _create_api() -> FastAPI:
+    from ticket_queue.config import get_config
+
+    kw: dict = {}
+    if not get_config().enable_api_docs:
+        kw["openapi_url"] = None
+        kw["docs_url"] = None
+        kw["redoc_url"] = None
+
+    return FastAPI(**kw)
+
+
+api = _create_api()
 
 
 @api.get("/ticket/{id}")

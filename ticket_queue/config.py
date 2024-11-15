@@ -36,6 +36,7 @@ class Config(BaseModel):
     frontend: PathOrUrl
     admin_password: str
     database: str
+    enable_api_docs: bool
 
 
 _config: Config | None = None

@@ -20,9 +20,11 @@ def override_get_config(tmp_path: Path):
     database = str(tmp_path / "queue.db")
     config = Config(
         database=database,
-        urls=["url"],
         admin_password=PLAINTEXT_ADMIN_PASSWORD,
+        # These options don't matter for the tests:
+        urls=["url"],
         frontend=PathOrUrl(type=PathOrUrl.Path, value="don't care"),
+        enable_api_docs=False,
     )
     with QueueConnection(database) as queue:
         queue.create()
