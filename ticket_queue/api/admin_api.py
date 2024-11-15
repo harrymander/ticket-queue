@@ -35,11 +35,12 @@ def is_admin(config: AppConfig, authorization: PasswordAuthHeader = None):
     if not authorization:
         raise Unauthorized()
 
-    name, *val = authorization.split(" ", maxsplit=1)
-    if not val or name != "Password":
+    name, *val_seq = authorization.split(" ", maxsplit=1)
+    if name != "Password":
         raise Unauthorized()
 
-    password = base64_decode(val[0])
+    encoded_password = val_seq[0] if val_seq else ""
+    password = base64_decode(encoded_password)
     if password != config.admin_password:
         raise Unauthorized()
 

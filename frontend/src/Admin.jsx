@@ -39,15 +39,13 @@ function PasswordEntry({ logIn }) {
           onChange={(e) => setPasswordInput(e.target.value)}
           value={passwordInput}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && passwordInput) {
+            if (e.key === "Enter") {
               tryLogIn();
             }
           }}
           autoComplete="off"
         />
-        <button disabled={!passwordInput} onClick={tryLogIn}>
-          Log in
-        </button>
+        <button onClick={tryLogIn}>Log in</button>
       </form>
       {loginState !== "logged-out" && (
         <p>
@@ -64,7 +62,7 @@ function useAuth() {
   const PASSWORD_STORAGE_KEY = "@ticket-queue/password";
   const [password, setPassword] = useState(() => {
     const password = localStorage.getItem(PASSWORD_STORAGE_KEY);
-    if (password) {
+    if (password !== null) {
       console.debug("Found password in localStorage");
     } else {
       console.debug("No password saved in localStorage");
@@ -72,7 +70,7 @@ function useAuth() {
     return password;
   });
   useEffect(() => {
-    if (password) {
+    if (password !== null) {
       localStorage.setItem(PASSWORD_STORAGE_KEY, password);
     } else {
       localStorage.removeItem(PASSWORD_STORAGE_KEY);
@@ -86,7 +84,7 @@ const AuthContext = createContext();
 
 function useAuthContext() {
   const { password, setPassword } = useContext(AuthContext);
-  if (!password) {
+  if (password === null) {
     throw Error(
       "useAuthContext must be called inside an authenticated context",
     );
@@ -189,11 +187,11 @@ function AdminDashboard() {
 
 export default function Admin() {
   const [password, setPassword] = useAuth();
-  return password ? (
+  return password === null ? (
+    <PasswordEntry logIn={setPassword} />
+  ) : (
     <AuthContext.Provider value={{ password, setPassword }}>
       <AdminDashboard />
     </AuthContext.Provider>
-  ) : (
-    <PasswordEntry logIn={setPassword} />
   );
 }

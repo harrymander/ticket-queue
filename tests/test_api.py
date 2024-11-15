@@ -6,7 +6,7 @@ from fastapi import status as Status
 from fastapi.testclient import TestClient
 
 from ticket_queue.api import api
-from ticket_queue.config import Config, PathOrUrl, get_config
+from ticket_queue.config import Config, PathOrUrl
 from ticket_queue.ticket_queue import QueueConnection
 
 client = TestClient(api)
@@ -15,13 +15,23 @@ client = TestClient(api)
 PLAINTEXT_ADMIN_PASSWORD = "admin"
 
 
+@pytest.fixture()
+def password(request) -> str:
+    param = getattr(request, "param", None)
+    if param is None:
+        return PLAINTEXT_ADMIN_PASSWORD
+    return param
+
+
 @pytest.fixture(autouse=True)
-def override_get_config(tmp_path: Path):
+def override_get_config(tmp_path: Path, password: str):
+    from ticket_queue.api.dependencies import get_config
+
     database = str(tmp_path / "queue.db")
     config = Config(
         database=database,
         urls=["url"],
-        admin_password=PLAINTEXT_ADMIN_PASSWORD,
+        admin_password=password,
         frontend=PathOrUrl(type=PathOrUrl.Path, value="don't care"),
     )
     with QueueConnection(database) as queue:
@@ -190,6 +200,12 @@ def test_admin_get_tickets(tickets) -> None:
     )
     assert all_tickets.status_code == Status.HTTP_200_OK
     assert all_tickets.json() == tickets
+
+
+@pytest.mark.parametrize("password", ("",), indirect=True)
+def test_admin_get_tickets_with_empty_password():
+    ret = client.get("/admin/tickets", headers={"Authorization": "Password"})
+    assert ret.status_code == 200
 
 
 @parametrize_invalid_password_auth_header()
