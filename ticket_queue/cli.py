@@ -206,7 +206,7 @@ def cli(
         tempdir = ctx.with_resource(TemporaryDirectory(prefix="ticket-queue"))
         database = os.path.join(tempdir, "ticket_queue.db")
 
-    if not admin_password:
+    if admin_password is None:
         admin_password = gen_random_password(random_password_len)
 
     config = Config(

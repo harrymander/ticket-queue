@@ -35,7 +35,7 @@ endif
 RUN_BACKEND_DEV = $(RUN_BACKEND) \
 	--reload \
 	$(DEV_DB_ARG) \
-	--admin-password $(DEV_ADMIN_PASSWORD)
+	--admin-password '$(DEV_ADMIN_PASSWORD)'
 
 
 .PHONY: dev-backend
