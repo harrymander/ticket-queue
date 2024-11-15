@@ -116,7 +116,9 @@ def gen_random_password(nbytes: int) -> str:
     "--frontend",
     type=DirPathOrUrl(),
     help="""Path to frontend directory or a URL from which the frontend is
-    being served. If not provided, will use the bundled frontend.""",
+    being served. If not provided, will serve the bundled frontend. Note that
+    if a URL is provided, the user is responsible for serving it separately
+    (the URL is required by this app for configuring CORS).""",
 )
 @click.option(
     "--admin-password",
