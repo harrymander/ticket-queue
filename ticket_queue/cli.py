@@ -5,11 +5,10 @@ import webbrowser
 from collections.abc import Sequence
 from tempfile import TemporaryDirectory
 from typing import cast
-from urllib.parse import urlparse
 
 import click
 
-from ticket_queue.config import Config, PathOrUrl, save_config_to_env
+from ticket_queue.config import Config, PathOrUrl, is_url, save_config_to_env
 
 
 class DirPathOrUrl(click.Path):
@@ -24,13 +23,13 @@ class DirPathOrUrl(click.Path):
             writable=True,
         )
 
+    # (Ignores the incompatible return type error)
     def convert(self, value, param, ctx) -> PathOrUrl:  # type: ignore
-        parsed = urlparse(value)
-        if parsed.scheme and parsed.netloc:
-            return PathOrUrl(type="url", value=value)
+        if is_url(value):
+            return PathOrUrl(type=PathOrUrl.Url, value=value)
 
         path = super().convert(value, param, ctx)
-        return PathOrUrl(type="path", value=cast(str, path))
+        return PathOrUrl(type=PathOrUrl.Path, value=cast(str, path))
 
 
 class WritableFilePath(click.Path):
@@ -63,7 +62,7 @@ def get_packaged_frontend_dir() -> PathOrUrl | None:
     if not os.path.isdir(PACKAGE_DIR):
         return None
 
-    return PathOrUrl(type="path", value="PACKAGE_DIR")
+    return PathOrUrl(type=PathOrUrl.Path, value="PACKAGE_DIR")
 
 
 def get_hostname(host: str) -> str | None:
@@ -173,7 +172,7 @@ def cli(
             )
 
     urls = list(urls)
-    if frontend.type == "path":
+    if frontend.type == PathOrUrl.Path:
         urls.extend(get_urls(host, port))
     else:
         urls.append(frontend.value)
@@ -220,14 +219,6 @@ def print_startup_panel(*, config: Config, reload: bool):
             "[bold red]Warning: there is no admin password![/bold red]"
         )
 
-    if config.frontend:
-        frontend_notice = f"Frontend path: {config.frontend!r}"
-    else:
-        frontend_notice = (
-            "[yellow]Note:[/yellow] not serving frontend. "
-            "Make sure something else is serving it!"
-        )
-
     text = f"""\
 The admin interface is located is available at:
 
@@ -235,8 +226,8 @@ The admin interface is located is available at:
 
 {password_notice}
 
-{frontend_notice}
-Database path: {config.database!r}
+Frontend: {config.frontend.value}
+Database path: {config.database}
 Auto-reload is {'en' if reload else 'dis'}abled
     """.rstrip()
 

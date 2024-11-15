@@ -18,7 +18,7 @@ class StaticFilesSPA(StaticFiles):
 
 
 def configure_frontend(app: FastAPI, frontend: PathOrUrl) -> None:
-    if frontend.type == "url":
+    if frontend.type == PathOrUrl.Url:
         app.add_middleware(
             CORSMiddleware,
             allow_origins=[frontend.value],

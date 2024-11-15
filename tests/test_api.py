@@ -22,7 +22,7 @@ def override_get_config(tmp_path: Path):
         database=database,
         urls=["url"],
         admin_password=PLAINTEXT_ADMIN_PASSWORD,
-        frontend=PathOrUrl(type="path", value="don't care"),
+        frontend=PathOrUrl(type=PathOrUrl.Path, value="don't care"),
     )
     with QueueConnection(database) as queue:
         queue.create()

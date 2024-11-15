@@ -1,21 +1,33 @@
 import os
 from collections.abc import Sequence
-from typing import Literal
+from enum import Enum
+from typing import ClassVar
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, model_validator
 
 
+class _PathOrUrlType(Enum):
+    Path = "path"
+    Url = "url"
+
+
+def is_url(val: str) -> bool:
+    url = urlparse(val)
+    return bool(url.scheme) and bool(url.netloc)
+
+
 class PathOrUrl(BaseModel):
-    type: Literal["path", "url"]
+    Path: ClassVar = _PathOrUrlType.Path
+    Url: ClassVar = _PathOrUrlType.Url
+
+    type: _PathOrUrlType
     value: str
 
     @model_validator(mode="after")
     def validate_model(self) -> "PathOrUrl":
-        if self.type == "url":
-            url = urlparse(self.value)
-            if not (url.scheme and url.netloc):
-                raise ValueError("invalid URL")
+        if self.type == self.Url and not is_url(self.value):
+            raise ValueError("invalid URL")
         return self
 
 
