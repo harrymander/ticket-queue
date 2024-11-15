@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 import secrets
@@ -157,6 +158,14 @@ DEFAULT_RANDOM_PASSWORD_LEN = 6
     default=True,
     help="""Enable the API documentation under /api/docs.""",
 )
+@click.option(
+    "--access-logs",
+    "access_log_level",
+    default="error",
+    type=click.Choice(("all", "error", "none")),
+    help="""HTTP access log level. If "all", includes 2xx requests (there
+    will be a lot of these since the frontend regularly polls the backend).""",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -171,6 +180,7 @@ def cli(
     random_password_len: int,
     browser: bool,
     api_docs: bool,
+    access_log_level: str,
 ) -> None:
     if workers > 1 and reload:
         raise click.UsageError("Cannot use --reload with more than one worker")
@@ -217,6 +227,7 @@ def cli(
         port=port,
         workers=workers,
         reload=reload,
+        access_log_level=access_log_level,
     )
 
 
@@ -255,12 +266,51 @@ API docs are {enabled_str(config.enable_api_docs)}
     print(Panel(text, title="Ticket queue"))
 
 
+class AccessFilter(logging.Filter):
+    """Filters out HTTP access logs for successful requests (codes 200-299)"""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.levelno != logging.INFO:
+            return True
+
+        args = record.args
+        if not (args and isinstance(args, Sequence)):
+            return True
+
+        status = args[-1]
+        if not isinstance(status, int):
+            return True
+
+        return not (200 <= status < 300)
+
+
+def uvicorn_log_config(access_log_level: str) -> dict:
+    from uvicorn.config import LOGGING_CONFIG
+
+    conf = LOGGING_CONFIG.copy()
+    if access_log_level == "none":
+        # The requests are logged on INFO, so still log errors
+        conf["loggers"]["uvicorn.access"]["level"] = "ERROR"
+    elif access_log_level == "error":
+        conf.setdefault("filters", {})["access_filter"] = {
+            "()": "ticket_queue.cli.AccessFilter",
+        }
+        conf["handlers"]["access"].setdefault("filters", []).append(
+            "access_filter"
+        )
+    elif access_log_level != "all":
+        raise ValueError(f"invalid access_log_level: {access_log_level}")
+
+    return conf
+
+
 def launch_server(
     *,
     host: str,
     port: int,
     workers: int,
     reload: bool,
+    access_log_level: str,
 ) -> None:
     import uvicorn
 
@@ -271,4 +321,5 @@ def launch_server(
         workers=workers,
         reload=reload,
         factory=True,
+        log_config=uvicorn_log_config(access_log_level),
     )
