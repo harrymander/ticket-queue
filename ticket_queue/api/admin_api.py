@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Query
 
-from ticket_queue.api.dependencies import AppConfig, Connection, TicketId
+from ticket_queue.api.dependencies import AppConfig, QueueConnector, TicketId
 from ticket_queue.api.errors import TicketNotFound, Unauthorized
 from ticket_queue.models import QueueTicket
 
@@ -49,15 +49,17 @@ admin_api = APIRouter(dependencies=[Depends(is_admin)])
 
 @admin_api.get("/tickets")
 def get_all_tickets(
-    connection: Connection,
+    connector: QueueConnector,
     limit: Annotated[int | None, Query(min=1)] = None,
 ) -> list[QueueTicket]:
-    return connection.get_all(limit=limit)
+    with connector as queue:
+        return queue.get_all(limit=limit)
 
 
 @admin_api.get("/ticket/{id}")
-def admin_get_ticket(id: TicketId, connection: Connection) -> QueueTicket:
-    ticket = connection.get(id)
+def admin_get_ticket(id: TicketId, connector: QueueConnector) -> QueueTicket:
+    with connector as queue:
+        ticket = queue.get(id)
     if not ticket:
         raise TicketNotFound()
 
@@ -65,5 +67,6 @@ def admin_get_ticket(id: TicketId, connection: Connection) -> QueueTicket:
 
 
 @admin_api.delete("/ticket/{id}", status_code=204)
-def admin_delete_ticket(id: TicketId, connection: Connection) -> None:
-    connection.remove(id)
+def admin_delete_ticket(id: TicketId, connector: QueueConnector) -> None:
+    with connector as queue:
+        queue.remove(id)

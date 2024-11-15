@@ -7,7 +7,7 @@ from fastapi import (
 )
 
 from ticket_queue.api.admin_api import admin_api
-from ticket_queue.api.dependencies import Connection, TicketId, TokenQuery
+from ticket_queue.api.dependencies import QueueConnector, TicketId, TokenQuery
 from ticket_queue.api.errors import TicketNotFound, Unauthorized
 from ticket_queue.models import NewTicket, QueueTicket
 
@@ -17,7 +17,7 @@ api = FastAPI()
 @api.get("/ticket/{id}")
 def get_ticket(
     id: TicketId,
-    connection: Connection,
+    connector: QueueConnector,
     token: TokenQuery,
 ) -> QueueTicket:
     """Get a ticket by ID and token.
@@ -25,7 +25,8 @@ def get_ticket(
     Returns 404 if ticket is not found or the provided token does not match.
     """
 
-    ticket = connection.get(id)
+    with connector as queue:
+        ticket = queue.get(id)
     if ticket and ticket.token == token:
         return ticket
 
@@ -33,8 +34,11 @@ def get_ticket(
 
 
 @api.post("/tickets", status_code=201)
-def new_ticket(new_ticket: NewTicket, connection: Connection) -> QueueTicket:
-    return connection.enqueue(new_ticket.name)
+def new_ticket(
+    new_ticket: NewTicket, connector: QueueConnector
+) -> QueueTicket:
+    with connector as queue:
+        return queue.enqueue(new_ticket.name)
 
 
 TokenAuthHeader = Annotated[
@@ -63,17 +67,18 @@ TicketToken = Annotated[str, Depends(get_token_from_header)]
 @api.delete("/ticket/{id}", status_code=204)
 def delete_ticket(
     id: TicketId,
-    connection: Connection,
+    connector: QueueConnector,
     token: TicketToken,
 ) -> None:
-    ticket = connection.get(id)
-    if not ticket:
-        raise TicketNotFound()
+    with connector as queue:
+        ticket = queue.get(id)
+        if not ticket:
+            raise TicketNotFound()
 
-    if ticket.token != token:
-        raise Unauthorized()
+        if ticket.token != token:
+            raise Unauthorized()
 
-    connection.remove(id)
+        queue.remove(id)
 
 
 api.include_router(admin_api, prefix="/admin")
