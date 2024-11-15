@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import * as Api from "./api";
+import { waitTimeMinutesString, ordinalString } from "./utils";
 
 function useTicketStorage() {
   const TICKET_STORAGE_KEY = "@ticket-queue/ticket";
@@ -126,30 +127,6 @@ function useTicketContext() {
   return ticket;
 }
 
-function waitTimeStringMinutes(timestamp) {
-  const minutes = Math.floor((Date.now() / 1000 - timestamp) / 60);
-  return minutes < 1 ? "< 1" : minutes.toString();
-}
-
-function ordinalString(number) {
-  const s = number.toString();
-  let suffix = "th";
-  switch (s[s.length - 1]) {
-    case "1":
-      suffix = "st";
-      break;
-    case "2":
-      suffix = "nd";
-      break;
-    case "3":
-      suffix = "rd";
-      break;
-    default:
-      break;
-  }
-  return `${s}${suffix}`;
-}
-
 function TicketInfo({ ticket }) {
   return (
     <div className="ticket-info">
@@ -162,7 +139,7 @@ function TicketInfo({ ticket }) {
         in the queue.
       </p>
       <p className="ticket-wait-time">
-        You have been waiting for {waitTimeStringMinutes(ticket.timestamp)} min.
+        You have been waiting for {waitTimeMinutesString(ticket.timestamp)} min.
       </p>
     </div>
   );

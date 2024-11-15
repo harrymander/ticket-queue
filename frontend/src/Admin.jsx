@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import * as Api from "./api";
+import { waitTimeMinutesString } from "./utils";
 
 function PasswordEntry({ logIn }) {
   const [passwordInput, setPasswordInput] = useState("");
@@ -111,7 +112,13 @@ function useAuthContext() {
 }
 
 function TicketListItem({ ticket }) {
-  return <li className="ticket-list-item">{ticket.name}</li>;
+  const waitTime = waitTimeMinutesString(ticket.timestamp);
+  return (
+    <li className="ticket-list-item">
+      <span className="ticket-name">{ticket.name}</span>{" "}
+      <span className="ticket-wait-time">({waitTime} min)</span>
+    </li>
+  );
 }
 
 function TicketsList({ tickets }) {
