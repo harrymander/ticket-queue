@@ -4,13 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 from starlette.responses import Response
 
-from ticket_queue.config import (
-    Config,
-    PathOrUrl,
-    get_config,
-    load_config_from_env,
-)
-from ticket_queue.ticket_queue import QueueConnection
+from ticket_queue.config import PathOrUrl
 
 
 class StaticFilesSPA(StaticFiles):
@@ -36,18 +30,17 @@ def configure_frontend(app: FastAPI, frontend: PathOrUrl) -> None:
         app.mount("/", StaticFilesSPA(directory=frontend.value, html=True))
 
 
-def _create_app(config: Config) -> FastAPI:
+def create_app() -> FastAPI:
     from ticket_queue.api import api
+    from ticket_queue.config import get_config, load_config_from_env
+    from ticket_queue.ticket_queue import QueueConnection
 
-    with QueueConnection(config.database) as queue:
-        queue.create()
+    load_config_from_env()
+    config = get_config()
+    with QueueConnection(config.database) as q:
+        q.create()
 
     app = FastAPI(openapi_url=None)
     app.mount("/api", api)
     configure_frontend(app, config.frontend)
     return app
-
-
-def create_app() -> FastAPI:
-    load_config_from_env()
-    return _create_app(get_config())
