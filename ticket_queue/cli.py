@@ -157,9 +157,11 @@ DEFAULT_RANDOM_PASSWORD_LEN = 6
     "--access-logs",
     "access_log_level",
     default="error",
-    type=click.Choice(("all", "error", "none")),
-    help="""HTTP access log level. If "all", includes 2xx requests (there
-    will be a lot of these since the frontend regularly polls the backend).""",
+    type=click.Choice(("all", "redirects", "error", "none")),
+    help="""HTTP access log level. If "error", only shows error codes (4xx and
+    5xx); if "redirects", includes 3xx requests; if "all", includes 2xx
+    requests (there will be a lot of these since the frontend regularly polls
+    the backend).""",
 )
 @click.pass_context
 def cli(
@@ -255,7 +257,12 @@ Auto-reload is {'en' if reload else 'dis'}abled
 
 
 class AccessFilter(logging.Filter):
-    """Filters out HTTP access logs for successful requests (codes 200-299)"""
+    """Filters out HTTP access logs for successful requests (codes 200-299)
+    and redirects (300-399)."""
+
+    def __init__(self, filter_redirects=True):
+        self.filter_redirects = filter_redirects
+        super().__init__()
 
     def filter(self, record: logging.LogRecord) -> bool:
         if record.levelno != logging.INFO:
@@ -269,7 +276,7 @@ class AccessFilter(logging.Filter):
         if not isinstance(status, int):
             return True
 
-        return not (200 <= status < 300)
+        return not (200 <= status < (400 if self.filter_redirects else 300))
 
 
 def uvicorn_log_config(access_log_level: str) -> dict:
@@ -279,9 +286,10 @@ def uvicorn_log_config(access_log_level: str) -> dict:
     if access_log_level == "none":
         # The requests are logged on INFO, so still log errors
         conf["loggers"]["uvicorn.access"]["level"] = "ERROR"
-    elif access_log_level == "error":
+    elif access_log_level in ("error", "redirects"):
         conf.setdefault("filters", {})["access_filter"] = {
             "()": "ticket_queue.cli.AccessFilter",
+            "filter_redirects": access_log_level == "error",
         }
         conf["handlers"]["access"].setdefault("filters", []).append(
             "access_filter"
