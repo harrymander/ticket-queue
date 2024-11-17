@@ -187,9 +187,10 @@ def cli(
             raise click.ClickException(
                 "No packaged frontend found! "
                 "Are you running from a built package? "
-                "Either re-build package with frontend, serve the frontend "
-                "separately and pass --no-frontend, or provide a path to the "
-                "frontend with --frontend."
+                "Either re-build package with frontend, pass an external "
+                "frontend path via --frontend, or serve the frontend "
+                "separately and and pass the URL via --frontend. "
+                "(See --help for more information.)"
             )
 
     urls = list(urls)
