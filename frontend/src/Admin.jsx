@@ -58,21 +58,56 @@ function PasswordEntry({ logIn }) {
   );
 }
 
+function popPasswordFromSearchParams() {
+  const url = new URL(window.location.href);
+  const password = url.searchParams.get("password");
+  if (password !== null) {
+    url.searchParams.delete("password");
+    window.history.replaceState(null, "", url.toString());
+  }
+  return password;
+}
+
 function useAuth() {
   const PASSWORD_STORAGE_KEY = "@ticket-queue/password";
-  const [password, setPassword] = useState(() => {
-    const password = localStorage.getItem(PASSWORD_STORAGE_KEY);
-    if (password !== null) {
-      console.debug("Found password in localStorage");
-    } else {
-      console.debug("No password saved in localStorage");
+  const [password, setPassword] = useState(null);
+
+  useEffect(() => {
+    let checkedUrlParams = false;
+    let urlPassword = null;
+
+    if (!checkedUrlParams) {
+      urlPassword = popPasswordFromSearchParams();
+      if (urlPassword !== null) {
+        setPassword(urlPassword);
+      }
     }
-    return password;
-  });
+
+    if (urlPassword === null) {
+      const password = localStorage.getItem(PASSWORD_STORAGE_KEY);
+      if (password === null) {
+        console.debug("No password saved in localStorage");
+      } else {
+        console.debug("Found password in localStorage");
+        setPassword(password);
+      }
+    }
+
+    return () => {
+      checkedUrlParams = true;
+    };
+  }, [setPassword]);
+
   useEffect(() => {
     if (password !== null) {
+      console.log(
+        `Setting password in ${PASSWORD_STORAGE_KEY} localStorage key`,
+      );
       localStorage.setItem(PASSWORD_STORAGE_KEY, password);
     } else {
+      console.log(
+        `Removing password from ${PASSWORD_STORAGE_KEY} localStorage key`,
+      );
       localStorage.removeItem(PASSWORD_STORAGE_KEY);
     }
   }, [password]);
