@@ -3,6 +3,7 @@ BACKEND_PORT ?= 8889
 FRONTEND_DEV_HOST ?= localhost
 FRONTEND_DEV_PORT ?= 7777
 DEV_ADMIN_PASSWORD ?= admin
+BACKEND_PREVIEW_WORKERS ?= 1
 
 
 .PHONY: all
@@ -53,7 +54,9 @@ dev-backend-frontend: frontend
 
 .PHONY: preview
 preview: frontend
-	$(RUN_BACKEND) --frontend $(FRONTEND_BUILD_DIR)
+	$(RUN_BACKEND) \
+	--workers $(BACKEND_PREVIEW_WORKERS) \
+	--frontend $(FRONTEND_BUILD_DIR)
 
 
 .PHONY: dev-frontend
