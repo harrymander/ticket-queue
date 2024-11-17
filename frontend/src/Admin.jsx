@@ -199,6 +199,17 @@ function TicketsManager() {
     };
   }, [fetchAdminWithAuth, setGetTicketsError, setTickets]);
 
+  useEffect(() => {
+    if (tickets) {
+      document.title = `(${tickets.length}) Ticket queue`;
+    } else {
+      document.title = "Ticket queue";
+    }
+    return () => {
+      document.title = "Ticket queue";
+    };
+  }, [tickets]);
+
   if (getTicketsError) {
     return <p>Error getting tickets!</p>;
   }
