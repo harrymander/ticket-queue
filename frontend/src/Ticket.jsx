@@ -6,19 +6,19 @@ function useTicketStorage() {
   const TICKET_STORAGE_KEY = "@ticket-queue/ticket";
 
   const [ticket, setTicket] = useState(() => {
-    const storeval = localStorage.getItem(TICKET_STORAGE_KEY);
-    if (!storeval) {
+    const storedVal = localStorage.getItem(TICKET_STORAGE_KEY);
+    if (!storedVal) {
       console.debug("No ticket in storage");
       return null;
     }
 
     try {
-      const ticket = JSON.parse(storeval);
+      const ticket = JSON.parse(storedVal);
       Api.validateTicket(ticket);
       console.debug("Ticket found in storage.", ticket);
       return ticket;
     } catch (error) {
-      console.error("Invalid ticket in storage; clearing.", storeval, error);
+      console.error("Invalid ticket in storage; clearing.", storedVal, error);
       return null;
     }
   });
