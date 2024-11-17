@@ -3,6 +3,7 @@ import math
 import os
 import secrets
 import socket
+import sys
 import webbrowser
 from collections.abc import Sequence
 from tempfile import TemporaryDirectory
@@ -254,7 +255,7 @@ Database path: {config.database}
 Auto-reload is {'en' if reload else 'dis'}abled
     """.rstrip()
 
-    print(Panel(text, title="Ticket queue"))
+    print(Panel(text, title="Ticket queue"), file=sys.stderr)
 
 
 class AccessFilter(logging.Filter):
