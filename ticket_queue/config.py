@@ -55,7 +55,7 @@ def load_config_from_env() -> None:
 
     var = os.getenv(_CONFIG_ENV_VAR)
     if not var:
-        raise RuntimeError("no config stored found in environment")
+        raise RuntimeError(f"no config found in ${{{_CONFIG_ENV_VAR}}}")
     _config = Config.model_validate_json(var)
 
 
