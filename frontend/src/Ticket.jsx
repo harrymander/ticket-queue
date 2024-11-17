@@ -67,6 +67,19 @@ function useTicket() {
     clearInterval(intervalRef.current);
   }, [ticket, setTicket]);
 
+  useEffect(() => {
+    function resetTitle() {
+      document.title = "Ticket queue";
+    }
+
+    if (ticket) {
+      document.title = `(${ticket.position + 1}) Ticket queue`;
+    } else {
+      resetTitle();
+    }
+    return resetTitle;
+  }, [ticket]);
+
   function createTicket(name) {
     if (ticket) {
       console.error("Ticket already exists!");
