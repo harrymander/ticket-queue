@@ -4,6 +4,8 @@ import os
 import secrets
 import socket
 import sys
+import threading
+import time
 import webbrowser
 from collections.abc import Sequence
 from tempfile import TemporaryDirectory
@@ -217,15 +219,13 @@ def cli(
     save_config_to_env(config)
     print_startup_panel(config=config, reload=reload, admin_urls=admin_urls)
 
-    if browser:
-        webbrowser.open(admin_urls[0])
-
     launch_server(
         host=host,
         port=port,
         workers=workers,
         reload=reload,
         access_log_level=access_log_level,
+        open_url=admin_urls[0] if browser else None,
     )
 
 
@@ -307,6 +307,11 @@ def uvicorn_log_config(access_log_level: str) -> dict:
     return conf
 
 
+def open_in_browser(url: str) -> None:
+    time.sleep(0.5)
+    webbrowser.open(url)
+
+
 def launch_server(
     *,
     host: str,
@@ -314,15 +319,28 @@ def launch_server(
     workers: int,
     reload: bool,
     access_log_level: str,
+    open_url: str | None,
 ) -> None:
     import uvicorn
 
-    uvicorn.run(
-        "ticket_queue.app:create_app",
-        host=host,
-        port=port,
-        workers=workers,
-        reload=reload,
-        factory=True,
-        log_config=uvicorn_log_config(access_log_level),
-    )
+    if open_url:
+        browser_thread = threading.Thread(
+            target=open_in_browser, args=(open_url,)
+        )
+        browser_thread.start()
+    else:
+        browser_thread = None
+
+    try:
+        uvicorn.run(
+            "ticket_queue.app:create_app",
+            host=host,
+            port=port,
+            workers=workers,
+            reload=reload,
+            factory=True,
+            log_config=uvicorn_log_config(access_log_level),
+        )
+    finally:
+        if browser_thread:
+            browser_thread.join()
