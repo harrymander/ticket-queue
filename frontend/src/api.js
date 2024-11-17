@@ -43,13 +43,17 @@ export function validateTicket(ticket) {
     ["name", "string"],
     ["position", "number"],
     ["timestamp", "number"],
-  ].forEach(([prop, type]) => {
-    const actual = typeof ticket[prop];
-    if (actual !== type) {
-      throw Error(
-        `Invalid ticket object: property ${prop} has invalid type; ` +
-          `expected ${type}, got ${actual}`,
-      );
+  ].forEach(([prop, exp_type]) => {
+    if (prop in ticket) {
+      const type = typeof ticket[prop];
+      if (type !== exp_type) {
+        throw Error(
+          `Invalid ticket object: property "${prop}" has invalid type; ` +
+            `expected ${exp_type}, got ${type}`,
+        );
+      }
+    } else {
+      throw Error(`Invalid ticket object: missing property "${prop}"`);
     }
   });
 }
