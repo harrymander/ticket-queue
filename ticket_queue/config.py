@@ -22,7 +22,7 @@ class PathOrUrl(BaseModel):
     Url: ClassVar = _PathOrUrlType.Url
 
     type: _PathOrUrlType
-    value: str
+    value: str = Field(min_length=1)
 
     @model_validator(mode="after")
     def validate_model(self) -> "PathOrUrl":
@@ -35,7 +35,7 @@ class Config(BaseModel):
     urls: Sequence[str] = Field(min_length=1)
     frontend: PathOrUrl
     admin_password: str
-    database: str
+    database: str = Field(min_length=1)
 
 
 _config: Config | None = None
