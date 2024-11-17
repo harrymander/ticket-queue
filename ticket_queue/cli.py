@@ -194,18 +194,19 @@ def cli(
                 "(See --help for more information.)"
             )
 
-    urls = list(urls)
-    if frontend.type == PathOrUrl.Path:
-        urls.extend(get_urls(host, port))
-    else:
-        urls.append(frontend.value)
-
     if not database:
         tempdir = ctx.with_resource(TemporaryDirectory(prefix="ticket-queue"))
         database = os.path.join(tempdir, "ticket_queue.db")
 
     if admin_password is None:
         admin_password = gen_random_password(random_password_len)
+
+    urls = list(urls)
+    if frontend.type == PathOrUrl.Path:
+        urls.extend(get_urls(host, port))
+    else:
+        urls.append(frontend.value)
+    admin_urls = [f"{u}/admin?password={admin_password}" for u in urls]
 
     config = Config(
         urls=urls,
@@ -214,10 +215,10 @@ def cli(
         database=database,
     )
     save_config_to_env(config)
-    print_startup_panel(config=config, reload=reload)
+    print_startup_panel(config=config, reload=reload, admin_urls=admin_urls)
 
     if browser:
-        webbrowser.open(f"{urls[0]}/admin")
+        webbrowser.open(admin_urls[0])
 
     launch_server(
         host=host,
@@ -228,11 +229,15 @@ def cli(
     )
 
 
-def print_startup_panel(*, config: Config, reload: bool):
+def print_startup_panel(
+    *,
+    config: Config,
+    reload: bool,
+    admin_urls: Sequence[str],
+):
     from rich import print
     from rich.panel import Panel
 
-    admin_urls = "\n  ".join(f"{u}/admin" for u in config.urls)
     if config.admin_password:
         password_notice = (
             "Admin password: "
@@ -244,9 +249,9 @@ def print_startup_panel(*, config: Config, reload: bool):
         )
 
     text = f"""\
-The admin interface is located is available at:
+The admin interface is located at:
 
-  {admin_urls}
+  {"\n  ".join(admin_urls)}
 
 {password_notice}
 
