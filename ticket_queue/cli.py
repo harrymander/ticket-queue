@@ -64,7 +64,7 @@ def get_packaged_frontend_dir() -> PathOrUrl | None:
     if not os.path.isdir(PACKAGE_DIR):
         return None
 
-    return PathOrUrl(type=PathOrUrl.Path, value="PACKAGE_DIR")
+    return PathOrUrl(type=PathOrUrl.Path, value=PACKAGE_DIR)
 
 
 def get_hostname(host: str) -> str | None:
