@@ -1,3 +1,4 @@
+import ipaddress
 import logging
 import math
 import os
@@ -71,7 +72,7 @@ def get_packaged_frontend_dir() -> PathOrUrl | None:
 
 
 def get_hostname(host: str) -> str | None:
-    if host in ("0.0.0.0", "::"):
+    if host == "0.0.0.0":
         return socket.gethostname()
     if host in ("127.0.0.1", "::1"):
         return "localhost"
@@ -83,6 +84,15 @@ def get_urls(host: str, port: int) -> list[str]:
     hostname = get_hostname(host)
     if hostname:
         urls.append(f"http://{hostname}:{port}")
+
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        pass
+    else:
+        if ip.version == 6:
+            host = f"[{host}]"
+
     urls.append(f"http://{host}:{port}")
     return urls
 
