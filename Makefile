@@ -42,21 +42,25 @@ RUN_BACKEND_DEV = $(RUN_BACKEND) \
 .PHONY: dev-backend
 dev-backend:
 	$(RUN_BACKEND_DEV) \
-	--frontend 'http://$(FRONTEND_DEV_HOST):$(FRONTEND_DEV_PORT)'
+	--frontend 'http://$(FRONTEND_DEV_HOST):$(FRONTEND_DEV_PORT)' \
+	$(BACKEND_EXTRA_ARGS)
 
 
 FRONTEND_BUILD_DIR = frontend/dist
 
 .PHONY: dev-backend-frontend
 dev-backend-frontend: frontend
-	$(RUN_BACKEND_DEV) --frontend $(FRONTEND_BUILD_DIR)
+	$(RUN_BACKEND_DEV) \
+	--frontend $(FRONTEND_BUILD_DIR) \
+	$(BACKEND_EXTRA_ARGS)
 
 
 .PHONY: preview
 preview: frontend
 	$(RUN_BACKEND) \
 	--workers $(BACKEND_PREVIEW_WORKERS) \
-	--frontend $(FRONTEND_BUILD_DIR)
+	--frontend $(FRONTEND_BUILD_DIR) \
+	$(BACKEND_EXTRA_ARGS)
 
 
 .PHONY: dev-frontend
@@ -65,7 +69,8 @@ dev-frontend:
 	VITE_BACKEND_URL='http://$(BACKEND_HOST):$(BACKEND_PORT)/api' \
 	npm run dev -- \
 	--host '$(FRONTEND_DEV_HOST)' \
-	--port $(FRONTEND_DEV_PORT)
+	--port $(FRONTEND_DEV_PORT) \
+	$(FRONTEND_EXTRA_ARGS)
 
 
 .PHONY: frontend
