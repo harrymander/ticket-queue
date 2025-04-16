@@ -209,6 +209,9 @@ def cli(
     if not database:
         tempdir = ctx.with_resource(TemporaryDirectory(prefix="ticket-queue"))
         database = os.path.join(tempdir, "ticket_queue.db")
+        database_is_tmp = True
+    else:
+        database_is_tmp = False
 
     if admin_password is None:
         admin_password = gen_random_password(random_password_len)
@@ -225,6 +228,7 @@ def cli(
         frontend=frontend,
         admin_password=admin_password,
         database=database,
+        database_is_tmp=database_is_tmp,
     )
     save_config_to_env(config)
     print_startup_panel(config=config, reload=reload, admin_urls=admin_urls)
@@ -258,6 +262,16 @@ def print_startup_panel(
             "[bold red]Warning: there is no admin password![/bold red]"
         )
 
+    if config.database_is_tmp:
+        database_notice = (
+            "\n[bold yellow]Warning: using a temporary file for database - \n"
+            "will be deleted when server exits! (Re-run with --database "
+            "flag to preserve.)"
+            "[/bold yellow]"
+        )
+    else:
+        database_notice = ""
+
     text = f"""\
 The admin interface is located at:
 
@@ -266,7 +280,7 @@ The admin interface is located at:
 {password_notice}
 
 Frontend: {config.frontend.value}
-Database path: {config.database}
+Database path: {config.database}{database_notice}
 Auto-reload is {'en' if reload else 'dis'}abled
     """.rstrip()
 
