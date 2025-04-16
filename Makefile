@@ -15,6 +15,7 @@ all: help
 .PHONY: help
 help:
 	@echo "The following targets are available:"
+	@echo "  dev			       Run backend/frontend dev servers (requires tmux)"
 	@echo "  dev-backend           Run backend dev server"
 	@echo "  dev-frontend          Run frontend dev server"
 	@echo "  dev-backend-frontend  Build frontend and run backend dev server that serves"
@@ -38,6 +39,12 @@ RUN_BACKEND_DEV = $(RUN_BACKEND) \
 	$(DEV_DB_ARG) \
 	--admin-password '$(DEV_ADMIN_PASSWORD)'
 
+
+.PHONY: dev
+dev:
+	tmux \
+		new-session "$(MAKE) dev-backend" ";" \
+		split-window -h "$(MAKE) dev-frontend"
 
 .PHONY: dev-backend
 dev-backend:
