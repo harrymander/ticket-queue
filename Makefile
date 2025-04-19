@@ -43,8 +43,8 @@ RUN_BACKEND_DEV = $(RUN_BACKEND) \
 .PHONY: dev
 dev:
 	tmux \
-		new-session "$(MAKE) dev-backend" ";" \
-		split-window -h "$(MAKE) dev-frontend"
+		new-session "$(MAKE) dev-backend || read" ";" \
+		split-window -h "$(MAKE) dev-frontend || read"
 
 .PHONY: dev-backend
 dev-backend:
