@@ -15,7 +15,7 @@ all: help
 .PHONY: help
 help:
 	@echo "The following targets are available:"
-	@echo "  dev			       Run backend/frontend dev servers (requires tmux)"
+	@echo "  dev                   Run backend/frontend dev servers (requires tmux)"
 	@echo "  dev-backend           Run backend dev server"
 	@echo "  dev-frontend          Run frontend dev server"
 	@echo "  dev-backend-frontend  Build frontend and run backend dev server that serves"
