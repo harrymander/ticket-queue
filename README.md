@@ -6,7 +6,7 @@ Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) for
 Python dependency management. Node dependencies must be installed manually:
 
 ```
-cd frontend && npm install
+npm -C frontend install
 ```
 
 To run a dev server (requires tmux):
