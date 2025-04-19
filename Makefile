@@ -22,7 +22,6 @@ help:
 	@echo "                        the frontend"
 	@echo "  frontend              Build the frontend"
 	@echo "  preview               Build frontend and run server in production mode"
-	@echo "  preview               Build frontend and run server in production mode"
 	@echo "  clean                 Clean frontend build outputs and dev server artifacts"
 	@echo "  help                  Show this help"
 
