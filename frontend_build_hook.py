@@ -53,12 +53,6 @@ class FrontendBuilder(BuildHookInterface):
         super().__init__(*args, **kwargs)
         self.__tempdir: TemporaryDirectory = TemporaryDirectory()
 
-    def _get_config(self, name: str) -> str:
-        config = self.config.get(name)
-        if not config:
-            raise ValueError(f"'{name}' is required in config")
-        return config
-
     def _build_frontend(
         self,
         config: Config,
