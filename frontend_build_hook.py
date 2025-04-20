@@ -51,7 +51,7 @@ class FrontendBuilder(BuildHookInterface):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.__tempdir: TemporaryDirectory = TemporaryDirectory()
+        self.__tempdir = TemporaryDirectory()
 
     def _build_frontend(
         self,
