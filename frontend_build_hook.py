@@ -51,7 +51,7 @@ class FrontendBuilder(BuildHookInterface):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.__tempdir: TemporaryDirectory | None = TemporaryDirectory()
+        self.__tempdir: TemporaryDirectory = TemporaryDirectory()
 
     def _get_config(self, name: str) -> str:
         config = self.config.get(name)
@@ -59,17 +59,19 @@ class FrontendBuilder(BuildHookInterface):
             raise ValueError(f"'{name}' is required in config")
         return config
 
-    def _init_sdist(
-        self, config: Config, version: str, build_data: dict
+    def _build_frontend(
+        self,
+        config: Config,
+        version: str,
+        build_data: dict,
     ) -> None:
-        npm = NpmRunner(self._get_config("node-root"))
+        workdir = self.__tempdir.name
+        npm = NpmRunner(config.node_root)
 
-        self._log("Checking NPM packages are up to date...")
-        npm.run("ls")
+        self._log("Installing NPM packages...")
+        npm.run("install")
 
-        self.__tempdir = TemporaryDirectory()
-        tempdir = self.__tempdir.name
-        outdir = os.path.join(tempdir, config.package_dir)
+        outdir = os.path.join(workdir, config.package_dir)
         os.makedirs(outdir, exist_ok=False)
         self._log(f"Building frontend to {outdir}...")
         npm.run("run", "build", "--", "--emptyOutDir", "--outDir", outdir)
@@ -82,7 +84,7 @@ class FrontendBuilder(BuildHookInterface):
         )
         build_data[include_key][outdir] = config.package_dir
 
-        package_module = os.path.join(tempdir, config.package_module)
+        package_module = os.path.join(workdir, config.package_module)
         relpath = os.path.relpath(
             config.package_dir, os.path.dirname(config.package_module)
         )
@@ -91,37 +93,39 @@ class FrontendBuilder(BuildHookInterface):
 
         build_data[include_key][package_module] = config.package_module
 
-    def _check_wheel_path(self, path: str, *, is_dir: bool = False) -> None:
-        staging = self.root
+    def _wheel_path_exists(self, path: str, *, is_dir: bool = False) -> bool:
         check = os.path.isdir if is_dir else os.path.exists
-        if check(os.path.join(staging, path)):
-            return
+        return check(os.path.join(self.root, path))
 
-        ptype = "directory" if is_dir else "path"
-        raise ValueError(
-            f"No {ptype} '{path}' in staging directory '{staging}. "
-            "Try building wheel from sdist."
-        )
-
-    def _init_wheel(self, config: Config, version: str) -> None:
+    def _wheel_needs_frontend(self, config: Config, version: str) -> bool:
         if version == "editable":
             self._log("Skipping frontend build for editable package")
-            return
+            return False
 
-        # Just check that the generated files have been created
-        self._check_wheel_path(config.package_module)
-        self._check_wheel_path(config.package_dir, is_dir=True)
+        wheel_exists = self._wheel_path_exists(
+            config.package_module
+        ) and self._wheel_path_exists(config.package_dir, is_dir=True)
+        if wheel_exists:
+            self._log("Building wheel from sdist, not re-building frontend")
+        return not wheel_exists
 
     def initialize(self, version: str, build_data: dict) -> None:
         config = Config.from_config(self.config)
+
         target = self.target_name
         if target == "sdist":
-            self._init_sdist(config, version, build_data)
+            build_frontend = True
         elif target == "wheel":
-            self._init_wheel(config, version)
+            build_frontend = self._wheel_needs_frontend(config, version)
         else:
             raise ValueError(f"Unsupported target: {target}")
 
+        if build_frontend:
+            self._build_frontend(
+                config,
+                version,
+                build_data,
+            )
+
     def finalize(self, *_) -> None:
-        if self.__tempdir is not None:
-            self.__tempdir.cleanup()
+        self.__tempdir.cleanup()
