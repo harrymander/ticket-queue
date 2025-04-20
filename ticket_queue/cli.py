@@ -281,7 +281,7 @@ The admin interface is located at:
 
 Frontend: {config.frontend.value}
 Database path: {config.database}{database_notice}
-Auto-reload is {'en' if reload else 'dis'}abled
+Auto-reload is {"en" if reload else "dis"}abled
     """.rstrip()
 
     print(Panel(text, title="Ticket queue"), file=sys.stderr)
