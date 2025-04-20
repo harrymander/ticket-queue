@@ -25,6 +25,9 @@ package-module = "ticket_queue/_packaged_frontend.py"
 package-dir = "ticket_queue/frontend"
 node-root = "frontend"
 
+[tool.hatch.build.targets.sdist]
+exclude = ["frontend/node_modules/*"]
+
 [dependency-groups]
 dev = [
     "flake8>=7.1.1",

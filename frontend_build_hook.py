@@ -68,7 +68,7 @@ class FrontendBuilder(BuildHookInterface):
         workdir = self.__tempdir.name
         npm = NpmRunner(config.node_root)
 
-        self._log("Installing NPM packages...")
+        self._log("Installing Node packages...")
         npm.run("install")
 
         outdir = os.path.join(workdir, config.package_dir)
@@ -93,39 +93,22 @@ class FrontendBuilder(BuildHookInterface):
 
         build_data[include_key][package_module] = config.package_module
 
-    def _wheel_path_exists(self, path: str, *, is_dir: bool = False) -> bool:
-        check = os.path.isdir if is_dir else os.path.exists
-        return check(os.path.join(self.root, path))
-
-    def _wheel_needs_frontend(self, config: Config, version: str) -> bool:
+    def _init_wheel(self, version: str, build_data: dict) -> None:
         if version == "editable":
             self._log("Skipping frontend build for editable package")
-            return False
-
-        wheel_exists = self._wheel_path_exists(
-            config.package_module
-        ) and self._wheel_path_exists(config.package_dir, is_dir=True)
-        if wheel_exists:
-            self._log("Building wheel from sdist, not re-building frontend")
-        return not wheel_exists
-
-    def initialize(self, version: str, build_data: dict) -> None:
-        config = Config.from_config(self.config)
-
-        target = self.target_name
-        if target == "sdist":
-            build_frontend = True
-        elif target == "wheel":
-            build_frontend = self._wheel_needs_frontend(config, version)
         else:
-            raise ValueError(f"Unsupported target: {target}")
-
-        if build_frontend:
             self._build_frontend(
-                config,
+                Config.from_config(self.config),
                 version,
                 build_data,
             )
+
+    def initialize(self, version: str, build_data: dict) -> None:
+        target = self.target_name
+        if target == "wheel":
+            self._init_wheel(version, build_data)
+        elif target != "sdist":
+            raise ValueError(f"Unsupported target: {target}")
 
     def finalize(self, *_) -> None:
         self.__tempdir.cleanup()
