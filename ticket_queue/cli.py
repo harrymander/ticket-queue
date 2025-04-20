@@ -223,10 +223,14 @@ def cli(
         frontend=frontend,
         admin_password=admin_password,
         database=database,
-        database_is_tmp=database_is_tmp,
     )
     save_config_to_env(config)
-    print_startup_panel(config=config, reload=reload, admin_urls=admin_urls)
+    print_startup_panel(
+        config=config,
+        reload=reload,
+        admin_urls=admin_urls,
+        database_is_tmp=database_is_tmp,
+    )
 
     launch_server(
         host=host,
@@ -243,6 +247,7 @@ def print_startup_panel(
     config: Config,
     reload: bool,
     admin_urls: Sequence[str],
+    database_is_tmp: bool,
 ):
     from rich import print
     from rich.panel import Panel
@@ -261,7 +266,7 @@ def print_startup_panel(
         f"Frontend: {config.frontend.value}",
         f"Database path: {config.database}",
     ]
-    if config.database_is_tmp:
+    if database_is_tmp:
         notices.append(
             "[bold yellow]Warning: using a temporary file for database - \n"
             "will be deleted when server exits! (Re-run with --database "

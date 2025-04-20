@@ -30,7 +30,6 @@ def override_get_config(tmp_path: Path, password: str):
     database = str(tmp_path / "queue.db")
     config = Config(
         database=database,
-        database_is_tmp=True,
         urls=["url"],
         admin_password=password,
         frontend=PathOrUrl(type=PathOrUrl.Path, value="don't care"),
