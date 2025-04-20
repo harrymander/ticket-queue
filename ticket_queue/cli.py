@@ -126,12 +126,7 @@ DEFAULT_RANDOM_PASSWORD_LEN = 6
     default=1,
     type=click.IntRange(min=1),
 )
-@click.option(
-    "--reload/--no-reload",
-    default=False,
-    help="""Auto-reload the server on file change. Use only for dev mode; only
-    one worker can be used if enabled.""",
-)
+@click.option("--reload", is_flag=True, default=False, hidden=True)
 @click.option(
     "--frontend",
     type=DirPathOrUrl(),
@@ -262,15 +257,19 @@ def print_startup_panel(
             "[bold red]Warning: there is no admin password![/bold red]"
         )
 
+    notices = [
+        f"Frontend: {config.frontend.value}",
+        f"Database path: {config.database}",
+    ]
     if config.database_is_tmp:
-        database_notice = (
-            "\n[bold yellow]Warning: using a temporary file for database - \n"
+        notices.append(
+            "[bold yellow]Warning: using a temporary file for database - \n"
             "will be deleted when server exits! (Re-run with --database "
             "flag to preserve.)"
             "[/bold yellow]"
         )
-    else:
-        database_notice = ""
+    if reload:
+        notices.append("Auto-reload is enabled")
 
     text = f"""\
 The admin interface is located at:
@@ -279,9 +278,7 @@ The admin interface is located at:
 
 {password_notice}
 
-Frontend: {config.frontend.value}
-Database path: {config.database}{database_notice}
-Auto-reload is {"en" if reload else "dis"}abled
+{"\n".join(notices)}
     """.rstrip()
 
     print(Panel(text, title="Ticket queue"), file=sys.stderr)
