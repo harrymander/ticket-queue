@@ -108,8 +108,38 @@ button:disabled {
   margin-bottom: 0.35rem;
 }
 
+.admin-dashboard {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-self: start;
+  position: sticky;
+  top: 1rem;
+}
+
+.admin-logout-button {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  width: auto;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 10%);
+}
+
 .admin-client-url {
-  margin: 0.75rem 0 1rem;
   padding: 0.75rem;
   border: 1px solid #dbeafe;
   border-radius: 0.5rem;
@@ -158,6 +188,21 @@ button:disabled {
     width: 100%;
     border-radius: 0.5rem;
     padding: 1rem;
+  }
+
+  .admin-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;
+  }
+
+  .admin-logout-button {
+    position: fixed;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: auto;
   }
 
   form,

@@ -230,15 +230,13 @@ function TicketsManager() {
     };
   }, [tickets]);
 
-  if (getTicketsError) {
-    return <p>Error getting tickets!</p>;
-  }
-
-  if (!tickets || tickets.length === 0) {
-    return <p>No tickets</p>;
-  }
-
-  return <TicketsList tickets={tickets} />;
+  return getTicketsError ? (
+    <p>Error getting tickets!</p>
+  ) : !tickets || tickets.length === 0 ? (
+    <p>No tickets</p>
+  ) : (
+    <TicketsList tickets={tickets} />
+  );
 }
 
 function ClientUrlManager() {
@@ -315,11 +313,15 @@ function ClientUrlManager() {
 function AdminDashboard() {
   const { logOut } = useAuthContext();
   return (
-    <>
-      <button onClick={logOut}>Log out</button>
-      <ClientUrlManager />
+    <div className="admin-dashboard">
+      <div className="admin-sidebar">
+        <button className="admin-logout-button" onClick={logOut}>
+          Log out
+        </button>
+        <ClientUrlManager />
+      </div>
       <TicketsManager />
-    </>
+    </div>
   );
 }
 
