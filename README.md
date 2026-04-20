@@ -1,5 +1,7 @@
 # Ticket queue
 
+A simple ticket queue web app that can be run from a single command.
+
 ## Quick start
 
 This project is not currently available on PyPI. However, the server can be run
