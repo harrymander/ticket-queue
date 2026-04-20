@@ -105,7 +105,34 @@ button:disabled {
 }
 
 .ticket-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 0.35rem;
+}
+
+.ticket-list-item-main {
+  min-width: 0;
+}
+
+.admin-remove-ticket-button {
+  width: auto;
+  flex-shrink: 0;
+  padding: 0.35rem 0.6rem;
+  border-color: #dc2626;
+  background: #dc2626;
+  font-size: 0.85rem;
+}
+
+.admin-remove-ticket-button:disabled {
+  background: #fca5a5;
+  border-color: #fca5a5;
+}
+
+.admin-remove-ticket-error {
+  color: #b91c1c;
+  font-weight: 600;
 }
 
 .admin-dashboard {

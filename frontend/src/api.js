@@ -40,6 +40,13 @@ export async function fetchAdminClientUrl(password, payload = {}) {
   return fetchAdminApi("client-url", password, payload);
 }
 
+export async function deleteAdminTicket(id, password, payload = {}) {
+  return fetchAdminApi(`ticket/${id}`, password, {
+    ...payload,
+    method: "DELETE",
+  });
+}
+
 export function validateTicket(ticket) {
   [
     ["id", "number"],

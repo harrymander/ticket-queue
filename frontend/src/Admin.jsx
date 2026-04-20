@@ -156,38 +156,69 @@ function useAuthContext() {
     [password, logOut],
   );
 
+  const deleteAdminTicketWithAuth = useCallback(
+    async (id, payload = {}) => {
+      return Api.deleteAdminTicket(id, password, payload).then((ret) => {
+        if (ret.status === 401) {
+          console.error("No longer authenticated!");
+          logOut();
+        } else {
+          return ret;
+        }
+      });
+    },
+    [password, logOut],
+  );
+
   return {
     password,
     logOut,
     fetchAdminWithAuth,
     fetchAdminClientUrlWithAuth,
+    deleteAdminTicketWithAuth,
   };
 }
 
-function TicketListItem({ ticket }) {
+function TicketListItem({ ticket, onRemoveTicket, isDeleting }) {
   const waitTime = waitTimeMinutesString(ticket.timestamp);
   return (
     <li className="ticket-list-item">
-      <span className="ticket-name">{ticket.name}</span>{" "}
-      <span className="ticket-wait-time">({waitTime} min)</span>
+      <div className="ticket-list-item-main">
+        <span className="ticket-name">{ticket.name}</span>{" "}
+        <span className="ticket-wait-time">({waitTime} min)</span>
+      </div>
+      <button
+        className="admin-remove-ticket-button"
+        onClick={() => onRemoveTicket(ticket.id)}
+        disabled={isDeleting}
+      >
+        {isDeleting ? "Removing..." : "Remove"}
+      </button>
     </li>
   );
 }
 
-function TicketsList({ tickets }) {
+function TicketsList({ tickets, onRemoveTicket, deletingTicketIds }) {
   return (
     <ol className="tickets-list">
       {tickets.map((ticket) => (
-        <TicketListItem key={ticket.token} ticket={ticket} />
+        <TicketListItem
+          key={ticket.token}
+          ticket={ticket}
+          onRemoveTicket={onRemoveTicket}
+          isDeleting={Boolean(deletingTicketIds[ticket.id])}
+        />
       ))}
     </ol>
   );
 }
 
 function TicketsManager() {
-  const { fetchAdminWithAuth } = useAuthContext();
+  const { fetchAdminWithAuth, deleteAdminTicketWithAuth } = useAuthContext();
   const [tickets, setTickets] = useState(null);
   const [getTicketsError, setGetTicketsError] = useState(null);
+  const [deleteTicketError, setDeleteTicketError] = useState(null);
+  const [deletingTicketIds, setDeletingTicketIds] = useState({});
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -230,12 +261,57 @@ function TicketsManager() {
     };
   }, [tickets]);
 
+  function removeTicket(id) {
+    if (deletingTicketIds[id]) {
+      return;
+    }
+
+    setDeleteTicketError(null);
+    setDeletingTicketIds((prev) => ({ ...prev, [id]: true }));
+    deleteAdminTicketWithAuth(id)
+      .then((ret) => {
+        if (ret && ret.ok) {
+          setTickets((prev) =>
+            prev
+              ? prev
+                  .filter((ticket) => ticket.id !== id)
+                  .map((ticket, index) => ({ ...ticket, position: index }))
+              : prev,
+          );
+          return;
+        }
+
+        if (ret) {
+          setDeleteTicketError("Error removing ticket");
+        }
+      })
+      .catch(() => {
+        setDeleteTicketError("Error removing ticket");
+      })
+      .finally(() => {
+        setDeletingTicketIds((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      });
+  }
+
   return getTicketsError ? (
     <p>Error getting tickets!</p>
   ) : !tickets || tickets.length === 0 ? (
     <p>No tickets</p>
   ) : (
-    <TicketsList tickets={tickets} />
+    <>
+      {deleteTicketError && (
+        <p className="admin-remove-ticket-error">{deleteTicketError}</p>
+      )}
+      <TicketsList
+        tickets={tickets}
+        onRemoveTicket={removeTicket}
+        deletingTicketIds={deletingTicketIds}
+      />
+    </>
   );
 }
 
