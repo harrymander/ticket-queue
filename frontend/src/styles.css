@@ -142,11 +142,20 @@ button:disabled {
   border-color: #dc2626;
   background: #dc2626;
   font-size: 0.85rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease-in-out;
 }
 
 .admin-remove-ticket-button:disabled {
   background: #fca5a5;
   border-color: #fca5a5;
+}
+
+.ticket-list-item:hover .admin-remove-ticket-button,
+.ticket-list-item:focus-within .admin-remove-ticket-button {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .admin-remove-ticket-error {
