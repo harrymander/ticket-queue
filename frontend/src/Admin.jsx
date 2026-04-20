@@ -46,7 +46,13 @@ function PasswordEntry({ logIn }) {
           }}
           autoComplete="off"
         />
-        <button onClick={tryLogIn}>Log in</button>
+        <button
+          className="button button--primary"
+          onClick={tryLogIn}
+          type="button"
+        >
+          Log in
+        </button>
       </form>
       {loginState !== "logged-out" && (
         <p>
@@ -189,9 +195,10 @@ function TicketListItem({ ticket, onRemoveTicket, isDeleting }) {
           <span className="ticket-wait-time">({waitTime} min)</span>
         </div>
         <button
-          className="admin-remove-ticket-button"
+          className="button button--danger button--compact button--hover-reveal admin-remove-ticket-button"
           onClick={() => onRemoveTicket(ticket.id)}
           disabled={isDeleting}
+          type="button"
         >
           {isDeleting ? "Removing..." : "Remove"}
         </button>
@@ -393,7 +400,11 @@ function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <div className="admin-sidebar">
-        <button className="admin-logout-button" onClick={logOut}>
+        <button
+          className="button button--subtle button--compact admin-logout-button"
+          onClick={logOut}
+          type="button"
+        >
           Log out
         </button>
         <ClientUrlManager />

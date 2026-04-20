@@ -15,6 +15,13 @@
   font-weight: 400;
   color: #111827;
   background-color: #f3f4f6;
+  --color-primary-600: #2563eb;
+  --color-primary-300: #93c5fd;
+  --color-danger-600: #dc2626;
+  --color-danger-300: #fca5a5;
+  --color-neutral-600: #4b5563;
+  --color-neutral-300: #d1d5db;
+  --color-surface: #ffffff;
 }
 
 *,
@@ -59,21 +66,49 @@ input {
   font: inherit;
 }
 
-button {
+.button {
   padding: 0.55rem 0.85rem;
-  border: 1px solid #2563eb;
-  background: #2563eb;
-  color: #ffffff;
+  border: 1px solid var(--button-border, var(--color-primary-600));
+  background: var(--button-bg, var(--color-primary-600));
+  color: var(--button-fg, #ffffff);
   border-radius: 0.5rem;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 
-button:disabled {
-  background: #93c5fd;
-  border-color: #93c5fd;
+.button:disabled {
+  background: var(--button-disabled-bg, var(--color-primary-300));
+  border-color: var(--button-disabled-border, var(--color-primary-300));
   cursor: not-allowed;
+}
+
+.button--primary {
+  --button-border: var(--color-primary-600);
+  --button-bg: var(--color-primary-600);
+  --button-fg: #ffffff;
+  --button-disabled-bg: var(--color-primary-300);
+  --button-disabled-border: var(--color-primary-300);
+}
+
+.button--danger {
+  --button-border: var(--color-danger-600);
+  --button-bg: var(--color-danger-600);
+  --button-fg: #ffffff;
+  --button-disabled-bg: var(--color-danger-300);
+  --button-disabled-border: var(--color-danger-300);
+}
+
+.button--subtle {
+  --button-border: var(--color-neutral-300);
+  --button-bg: var(--color-surface);
+  --button-fg: var(--color-neutral-600);
+}
+
+.button--compact {
+  width: auto;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
 }
 
 .ticket-info {
@@ -136,24 +171,17 @@ button:disabled {
 }
 
 .admin-remove-ticket-button {
-  width: auto;
   flex-shrink: 0;
-  padding: 0.35rem 0.6rem;
-  border-color: #dc2626;
-  background: #dc2626;
-  font-size: 0.85rem;
+}
+
+.button--hover-reveal {
   opacity: 0;
   pointer-events: none;
   transition: opacity 120ms ease-in-out;
 }
 
-.admin-remove-ticket-button:disabled {
-  background: #fca5a5;
-  border-color: #fca5a5;
-}
-
-.ticket-list-item:hover .admin-remove-ticket-button,
-.ticket-list-item:focus-within .admin-remove-ticket-button {
+.ticket-list-item:hover .button--hover-reveal,
+.ticket-list-item:focus-within .button--hover-reveal {
   opacity: 1;
   pointer-events: auto;
 }
@@ -184,11 +212,6 @@ button:disabled {
   top: 0.75rem;
   right: 0.75rem;
   z-index: 10;
-  width: auto;
-  padding: 0.35rem 0.6rem;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #4b5563;
   font-size: 0.9rem;
   font-weight: 500;
   box-shadow: 0 1px 4px rgb(0 0 0 / 10%);
@@ -267,11 +290,15 @@ button:disabled {
   }
 
   input,
-  button {
+  .button {
     width: 100%;
   }
 
   .ticket-name {
     font-size: 1.2rem;
+  }
+
+  .button--compact {
+    width: auto;
   }
 }

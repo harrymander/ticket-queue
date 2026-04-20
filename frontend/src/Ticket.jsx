@@ -168,7 +168,13 @@ function HasTicket() {
       {ticketPending ? (
         <p>Deleting...</p>
       ) : (
-        <button onClick={deleteTicket}>Leave queue</button>
+        <button
+          className="button button--danger"
+          onClick={deleteTicket}
+          type="button"
+        >
+          Leave queue
+        </button>
       )}
       {ticketError && <p className="ticket-delete-error">{ticketError}</p>}
     </>
@@ -201,7 +207,12 @@ function TicketCreator() {
           }
         }}
       />
-      <button disabled={valueTrimmed === ""} onClick={submit}>
+      <button
+        className="button button--primary"
+        disabled={valueTrimmed === ""}
+        onClick={submit}
+        type="button"
+      >
         Create
       </button>
       {ticketError && <p className="create-ticket-error">{ticketError}</p>}
