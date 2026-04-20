@@ -183,17 +183,19 @@ function TicketListItem({ ticket, onRemoveTicket, isDeleting }) {
   const waitTime = waitTimeMinutesString(ticket.timestamp);
   return (
     <li className="ticket-list-item">
-      <div className="ticket-list-item-main">
-        <span className="ticket-name">{ticket.name}</span>{" "}
-        <span className="ticket-wait-time">({waitTime} min)</span>
+      <div className="ticket-list-item-row">
+        <div className="ticket-list-item-main">
+          <span className="ticket-name">{ticket.name}</span>{" "}
+          <span className="ticket-wait-time">({waitTime} min)</span>
+        </div>
+        <button
+          className="admin-remove-ticket-button"
+          onClick={() => onRemoveTicket(ticket.id)}
+          disabled={isDeleting}
+        >
+          {isDeleting ? "Removing..." : "Remove"}
+        </button>
       </div>
-      <button
-        className="admin-remove-ticket-button"
-        onClick={() => onRemoveTicket(ticket.id)}
-        disabled={isDeleting}
-      >
-        {isDeleting ? "Removing..." : "Remove"}
-      </button>
     </li>
   );
 }

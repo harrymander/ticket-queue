@@ -105,11 +105,15 @@ button:disabled {
 }
 
 .ticket-list-item {
+  display: list-item;
+  margin-bottom: 0.35rem;
+}
+
+.ticket-list-item-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.35rem;
 }
 
 .ticket-list-item-main {
