@@ -211,7 +211,7 @@ function TicketCreator() {
 
 function App() {
   const { ticket } = useTicketContext();
-  return ticket ? HasTicket() : TicketCreator();
+  return ticket ? <HasTicket /> : <TicketCreator />;
 }
 
 export default function Ticket() {
