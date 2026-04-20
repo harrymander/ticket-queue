@@ -32,7 +32,7 @@ body {
 }
 
 #root {
-  width: min(100%, 40rem);
+  max-width: 72rem;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
