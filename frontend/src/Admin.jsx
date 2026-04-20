@@ -141,7 +141,26 @@ function useAuthContext() {
     [password, logOut],
   );
 
-  return { password, logOut, fetchAdminWithAuth };
+  const fetchAdminClientUrlWithAuth = useCallback(
+    async (payload = {}) => {
+      return Api.fetchAdminClientUrl(password, payload).then((ret) => {
+        if (ret.status === 401) {
+          console.error("No longer authenticated!");
+          logOut();
+        } else {
+          return ret;
+        }
+      });
+    },
+    [password, logOut],
+  );
+
+  return {
+    password,
+    logOut,
+    fetchAdminWithAuth,
+    fetchAdminClientUrlWithAuth,
+  };
 }
 
 function TicketListItem({ ticket }) {
@@ -221,11 +240,59 @@ function TicketsManager() {
   return <TicketsList tickets={tickets} />;
 }
 
+function ClientUrlManager() {
+  const { fetchAdminClientUrlWithAuth } = useAuthContext();
+  const [clientUrl, setClientUrl] = useState(null);
+  const [clientUrlError, setClientUrlError] = useState(null);
+  const [loadingClientUrl, setLoadingClientUrl] = useState(true);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
+    fetchAdminClientUrlWithAuth({ signal })
+      .then((ret) => {
+        if (ret && ret.ok) {
+          return ret.json();
+        }
+        if (ret) {
+          setClientUrlError("Error getting client URL");
+        }
+      })
+      .then((data) => {
+        if (data && data.url) {
+          setClientUrl(data.url);
+          setClientUrlError(null);
+        }
+        setLoadingClientUrl(false);
+      });
+
+    return () => {
+      abortController.abort("Cleanup");
+    };
+  }, [fetchAdminClientUrlWithAuth]);
+
+  return (
+    <div className="admin-client-url">
+      {loadingClientUrl ? (
+        <p>Loading URL...</p>
+      ) : clientUrlError ? (
+        <p className="admin-client-url-error">{clientUrlError}</p>
+      ) : (
+        <a href={clientUrl} target="_blank" rel="noreferrer">
+          {clientUrl}
+        </a>
+      )}
+    </div>
+  );
+}
+
 function AdminDashboard() {
   const { logOut } = useAuthContext();
   return (
     <>
       <button onClick={logOut}>Log out</button>
+      <ClientUrlManager />
       <TicketsManager />
     </>
   );

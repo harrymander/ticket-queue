@@ -36,6 +36,10 @@ export async function fetchAdminApi(endpoint, password, payload = {}) {
   return fetch(`${BACKEND_URL}/admin/${endpoint}`, payload);
 }
 
+export async function fetchAdminClientUrl(password, payload = {}) {
+  return fetchAdminApi("client-url", password, payload);
+}
+
 export function validateTicket(ticket) {
   [
     ["id", "number"],

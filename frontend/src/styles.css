@@ -108,6 +108,27 @@ button:disabled {
   margin-bottom: 0.35rem;
 }
 
+.admin-client-url {
+  margin: 0.75rem 0 1rem;
+  padding: 0.75rem;
+  border: 1px solid #dbeafe;
+  border-radius: 0.5rem;
+  background: #eff6ff;
+}
+
+.admin-client-url a {
+  color: inherit;
+  text-decoration: none;
+  font-size: 1.2rem;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.admin-client-url-error {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 .create-ticket-error,
 .ticket-delete-error {
   margin-top: 0.75rem;
