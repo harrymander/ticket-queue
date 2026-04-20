@@ -195,7 +195,7 @@ function TicketsManager() {
     const id = setInterval(fetchTickets, 1000);
     return () => {
       clearInterval(id);
-      abortController.abort();
+      abortController.abort("Cleanup");
     };
   }, [fetchAdminWithAuth, setGetTicketsError, setTickets]);
 
