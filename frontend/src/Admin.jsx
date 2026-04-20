@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import QRCode from "qrcode";
 import * as Api from "./api";
 import { waitTimeMinutesString } from "./utils";
 
@@ -245,6 +246,7 @@ function ClientUrlManager() {
   const [clientUrl, setClientUrl] = useState(null);
   const [clientUrlError, setClientUrlError] = useState(null);
   const [loadingClientUrl, setLoadingClientUrl] = useState(true);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState(null);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -272,6 +274,20 @@ function ClientUrlManager() {
     };
   }, [fetchAdminClientUrlWithAuth]);
 
+  useEffect(() => {
+    if (!clientUrl) {
+      setQrCodeDataUrl(null);
+      return;
+    }
+
+    QRCode.toDataURL(clientUrl, {
+      margin: 1,
+      width: 220,
+    })
+      .then((dataUrl) => setQrCodeDataUrl(dataUrl))
+      .catch(() => setClientUrlError("Error generating QR code"));
+  }, [clientUrl]);
+
   return (
     <div className="admin-client-url">
       {loadingClientUrl ? (
@@ -279,9 +295,18 @@ function ClientUrlManager() {
       ) : clientUrlError ? (
         <p className="admin-client-url-error">{clientUrlError}</p>
       ) : (
-        <a href={clientUrl} target="_blank" rel="noreferrer">
-          {clientUrl}
-        </a>
+        <>
+          <a href={clientUrl} target="_blank" rel="noreferrer">
+            {clientUrl}
+          </a>
+          {qrCodeDataUrl && (
+            <img
+              className="admin-client-url-qrcode"
+              src={qrCodeDataUrl}
+              alt="QR code for ticket client URL"
+            />
+          )}
+        </>
       )}
     </div>
   );
