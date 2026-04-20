@@ -43,3 +43,11 @@ class QueueTicket(BaseModel):
 
 class NewTicket(BaseModel):
     name: NonEmptyString
+
+
+class TicketClientUrl(BaseModel):
+    url: str = Field(
+        ...,
+        min_length=1,
+        description="URL for the ticket-creation client.",
+    )

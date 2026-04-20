@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Header, Query
 
 from ticket_queue.api.dependencies import AppConfig, QueueConnector, TicketId
 from ticket_queue.api.errors import TicketNotFound, Unauthorized
-from ticket_queue.models import QueueTicket
+from ticket_queue.models import QueueTicket, TicketClientUrl
 
 PasswordAuthHeader = Annotated[
     str | None,
@@ -65,6 +65,11 @@ def admin_get_ticket(id: TicketId, connector: QueueConnector) -> QueueTicket:
         raise TicketNotFound()
 
     return ticket
+
+
+@admin_api.get("/client-url")
+def get_client_url(config: AppConfig) -> TicketClientUrl:
+    return TicketClientUrl(url=config.urls[0])
 
 
 @admin_api.delete("/ticket/{id}", status_code=204)

@@ -202,6 +202,12 @@ def test_admin_get_tickets(tickets) -> None:
     assert all_tickets.json() == tickets
 
 
+def test_admin_get_client_url() -> None:
+    ret = client.get("/admin/client-url", headers=PASSWORD_AUTH_HEADER)
+    assert ret.status_code == Status.HTTP_200_OK
+    assert ret.json() == {"url": "url"}
+
+
 @pytest.mark.parametrize("password", ("",), indirect=True)
 def test_admin_get_tickets_with_empty_password():
     ret = client.get("/admin/tickets", headers={"Authorization": "Password"})
@@ -211,6 +217,12 @@ def test_admin_get_tickets_with_empty_password():
 @parametrize_invalid_password_auth_header()
 def test_admin_get_tickets_invalid_header_fails(header):
     ret = client.get("/admin/tickets", headers=header)
+    assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
+
+
+@parametrize_invalid_password_auth_header()
+def test_admin_get_client_url_invalid_header_fails(header):
+    ret = client.get("/admin/client-url", headers=header)
     assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
 
 
