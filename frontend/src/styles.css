@@ -100,13 +100,27 @@ button:disabled {
 }
 
 .tickets-list {
+  counter-reset: ticket;
+  list-style: none;
   margin: 0.5rem 0 0;
-  padding-left: 1.25rem;
+  padding-left: 0;
 }
 
 .ticket-list-item {
-  display: list-item;
+  counter-increment: ticket;
+  display: grid;
+  grid-template-columns: 4ch minmax(0, 1fr);
+  column-gap: 0.5rem;
+  align-items: center;
   margin-bottom: 0.35rem;
+}
+
+.ticket-list-item::before {
+  content: counter(ticket) ".";
+  align-self: center;
+  text-align: right;
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
 }
 
 .ticket-list-item-row {
