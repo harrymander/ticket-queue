@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Ticket from "./Ticket.jsx";
 import Admin from "./Admin.jsx";
+import "./styles.css";
 
 const router = createBrowserRouter(
   [
