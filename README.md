@@ -8,12 +8,19 @@ This project is not currently available on PyPI. However, the server can be run
 directly without cloning using a package manager such as `uvx` or `pipx`:
 
 ```
-uvx git+https://github.com/harrymander/ticket-queue.git
+uvx git+https://github.com/harrymander/ticket-queue.git@bundled
 ```
 
 By default this will open a browser window to the admin page. To persist the
 queue database to a file, pass `--database=path/to/db`. Pass `--help` for a
 complete list of options.
+
+The `bundled` branch (specified via `@bundled` in the above command) contains a
+pre-built copy of the frontend, so the server can be run without Node.js being
+installed. This branch is automatically updated by GitHub Actions whenever
+`main` is updated. If you have Node.js installed and want to build the frontend
+yourself (e.g. if you want to use a different version of node), run the above
+command without the `@bundled` suffix.
 
 ### Manual installation
 
@@ -27,6 +34,10 @@ pip install .
 Then run `ticket-queue` directly. (Note you can install the project directly
 to your global Python environment without using a virtualenv, but this is
 not recommended since it may break your system Python installation.)
+
+**Note:** Node.js must also be installed to build the package on the `main`
+branch. Check out the `bundled` branch to use the pre-packaged frontend if Node
+is not installed.
 
 ## Development
 
