@@ -33,6 +33,7 @@ def override_get_config(tmp_path: Path, password: str):
         urls=["url"],
         admin_password=password,
         frontend=PathOrUrl(type=PathOrUrl.Path, value="don't care"),
+        init_announcement=None,
     )
     with QueueConnection(database) as queue:
         queue.create()

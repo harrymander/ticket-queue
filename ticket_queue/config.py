@@ -36,6 +36,7 @@ class Config(BaseModel):
     frontend: PathOrUrl
     admin_password: str
     database: str = Field(min_length=1)
+    init_announcement: str | None
 
 
 _config: Config | None = None
