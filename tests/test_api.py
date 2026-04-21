@@ -208,6 +208,47 @@ def test_admin_get_client_url() -> None:
     assert ret.json() == {"url": "url"}
 
 
+def test_get_announcement_default_empty() -> None:
+    ret = client.get("/announcement")
+    assert ret.status_code == Status.HTTP_200_OK
+    assert ret.json() == {"message": None}
+
+
+def test_admin_get_announcement_default_empty() -> None:
+    ret = client.get("/admin/announcement", headers=PASSWORD_AUTH_HEADER)
+    assert ret.status_code == Status.HTTP_200_OK
+    assert ret.json() == {"message": None}
+
+
+def test_admin_update_announcement() -> None:
+    ret = client.put(
+        "/admin/announcement",
+        headers=PASSWORD_AUTH_HEADER,
+        json={"message": "hello"},
+    )
+    assert ret.status_code == Status.HTTP_200_OK
+    assert ret.json() == {"message": "hello"}
+
+    ret = client.get("/announcement")
+    assert ret.status_code == Status.HTTP_200_OK
+    assert ret.json() == {"message": "hello"}
+
+
+def test_admin_update_announcement_empty_clears() -> None:
+    client.put(
+        "/admin/announcement",
+        headers=PASSWORD_AUTH_HEADER,
+        json={"message": "hello"},
+    )
+    ret = client.put(
+        "/admin/announcement",
+        headers=PASSWORD_AUTH_HEADER,
+        json={"message": "   "},
+    )
+    assert ret.status_code == Status.HTTP_200_OK
+    assert ret.json() == {"message": None}
+
+
 @pytest.mark.parametrize("password", ("",), indirect=True)
 def test_admin_get_tickets_with_empty_password():
     ret = client.get("/admin/tickets", headers={"Authorization": "Password"})
@@ -223,6 +264,22 @@ def test_admin_get_tickets_invalid_header_fails(header):
 @parametrize_invalid_password_auth_header()
 def test_admin_get_client_url_invalid_header_fails(header):
     ret = client.get("/admin/client-url", headers=header)
+    assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
+
+
+@parametrize_invalid_password_auth_header()
+def test_admin_get_announcement_invalid_header_fails(header):
+    ret = client.get("/admin/announcement", headers=header)
+    assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
+
+
+@parametrize_invalid_password_auth_header()
+def test_admin_update_announcement_invalid_header_fails(header):
+    ret = client.put(
+        "/admin/announcement",
+        headers=header,
+        json={"message": "x"},
+    )
     assert ret.status_code == Status.HTTP_401_UNAUTHORIZED
 
 

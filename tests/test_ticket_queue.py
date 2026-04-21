@@ -87,3 +87,29 @@ def test_positions_change_after_removal(connection: QueueConnection):
 def test_tokens_are_unique(connection: QueueConnection):
     tokens = [connection.enqueue("item").token for _ in range(100)]
     assert len(set(tokens)) == len(tokens)
+
+
+def test_get_announcement_empty(connection: QueueConnection):
+    assert connection.get_announcement() is None
+
+
+def test_set_and_get_announcement(connection: QueueConnection):
+    connection.set_announcement("hello")
+    assert connection.get_announcement() == "hello"
+
+
+def test_set_announcement_overwrites_existing(connection: QueueConnection):
+    connection.set_announcement("hello")
+    connection.set_announcement("goodbye")
+    assert connection.get_announcement() == "goodbye"
+
+
+def test_set_announcement_strips_whitespace(connection: QueueConnection):
+    connection.set_announcement("  hello\n")
+    assert connection.get_announcement() == "hello"
+
+
+def test_set_announcement_empty_clears(connection: QueueConnection):
+    connection.set_announcement("hello")
+    connection.set_announcement("   ")
+    assert connection.get_announcement() is None

@@ -11,6 +11,8 @@ def gen_token() -> str:
 
 
 class QueueConnection:
+    ANNOUNCEMENT_KEY = "announcement_message"
+
     def __init__(self, path: str | PathLike):
         self.con = sqlite3.connect(path)
 
@@ -33,6 +35,38 @@ class QueueConnection:
                     timestamp INTEGER NOT NULL
                 )
             """)
+            self.con.execute("""
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+            """)
+
+    def set_announcement(self, message: str | None) -> None:
+        value = message.strip() if message else ""
+        with self.con:
+            if value:
+                self.con.execute(
+                    """
+                    INSERT INTO settings (key, value)
+                    VALUES (?, ?)
+                    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                    """,
+                    (self.ANNOUNCEMENT_KEY, value),
+                )
+            else:
+                self.con.execute(
+                    "DELETE FROM settings WHERE key = ?",
+                    (self.ANNOUNCEMENT_KEY,),
+                )
+
+    def get_announcement(self) -> str | None:
+        with self.con:
+            ret = self.con.execute(
+                "SELECT value FROM settings WHERE key = ?",
+                (self.ANNOUNCEMENT_KEY,),
+            ).fetchone()
+        return ret[0] if ret else None
 
     def enqueue(self, name: str) -> QueueTicket:
         if not name:
