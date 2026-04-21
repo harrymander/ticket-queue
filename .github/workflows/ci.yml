@@ -36,8 +36,9 @@ jobs:
       - name: Disable custom build hook
         run: |
           rm frontend_build_hook.py
+          rm -rf frontend/
           perl -0777 -i -pe 's/(?ms)\[tool\.hatch\.build\.hooks\.custom\].*?^\n//' pyproject.toml
-          ! git diff --quiet -- pyproject.toml
+          ! git diff --exit-code -- pyproject.toml
       - name: Generate frontend package file
         run: |
           >ticket_queue/_packaged_frontend.py cat << EOF
@@ -54,17 +55,19 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Commit changes and push to bundled branch
         run: |
-          git fetch origin
+          worktree="$(mktemp -d)/bundled"
 
           if git ls-remote --exit-code --heads origin bundled >/dev/null; then
-            git switch -C bundled --track origin/bundled
+            git worktree add --track -b bundled "$worktree" origin/bundled
           else
-            git switch -c bundled
+            git worktree add -b bundled "$worktree"
           fi
 
-          git add --all
-          if git commit -m "Bundle for ${{ github.sha }}"; then
-            git push -u origin bundled
+          rsync -av --info=progress2 --exclude=/.git --filter=':- .gitignore' . "$worktree/"
+
+          git -C "$worktree" add --all
+          if git -C "$worktree" commit -m "Bundle for ${{ github.sha }}"; then
+            git -C "$worktree" push -u origin bundled
           else
             echo "No changes to commit."
           fi
