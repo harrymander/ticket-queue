@@ -37,7 +37,7 @@ jobs:
         run: |
           rm frontend_build_hook.py
           perl -0777 -i -pe 's/(?ms)\[tool\.hatch\.build\.hooks\.custom\].*?^\n//' pyproject.toml
-          ! git diff --quiet -- pyproject.toml
+          ! git diff --exit-code -- pyproject.toml
       - name: Generate frontend package file
         run: |
           >ticket_queue/_packaged_frontend.py cat << EOF
