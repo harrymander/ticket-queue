@@ -9,7 +9,13 @@ FROM python:3.13-alpine
 
 COPY --from=frontend /frontend/dist /app/frontend
 COPY ticket_queue /app/ticket_queue
-COPY pyproject.toml uv.lock frontend_build_hook.py /app/
+COPY \
+    frontend_build_hook.py \
+    LICENSE \
+    pyproject.toml \
+    README.md \
+    uv.lock \
+    /app/
 
 WORKDIR /app
 ENV TICKET_QUEUE_DISABLE_FRONTEND_BUILD=1
