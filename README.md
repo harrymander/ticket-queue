@@ -2,6 +2,12 @@
 
 A simple ticket queue web app that can be run from a single command.
 
+## Contents
+
+1. [Quick start](#quick-start)
+2. [Security warning](#security-warning)
+3. [Development](#development)
+
 ## Quick start
 
 ### Python package manager
