@@ -16,4 +16,8 @@ ENV TICKET_QUEUE_DISABLE_FRONTEND_BUILD=1
 RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
     uv sync --locked --no-cache --no-dev
 
-ENTRYPOINT ["/app/.venv/bin/ticket-queue", "--no-browser", "--frontend=/app/frontend"]
+ENTRYPOINT [ \
+    "/app/.venv/bin/ticket-queue", \
+    "--no-browser", \
+    "--frontend=/app/frontend", \
+    "--database=/db.sqlite"]

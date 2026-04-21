@@ -45,6 +45,14 @@ manually. E.g.:
 docker run --rm -p 8000:8000 ghcr.io/harrymander/ticket-queue:latest --url=<CLIENT DISPLAY URL>
 ```
 
+The database is located at `/db.sqlite` in the container. Use a bind mount to
+specify a file in the host dir:
+
+```
+touch db.sqlite
+docker run --rm --network host -v ./db.sqlite:/db.sqlite ghcr.io/harrymander/ticket-queue:latest
+```
+
 ### Manual installation
 
 Clone this directory and create a virtualenv. Then install the
