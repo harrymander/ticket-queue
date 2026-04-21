@@ -435,7 +435,7 @@ function AnnouncementManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -468,7 +468,6 @@ function AnnouncementManager() {
 
   function saveAnnouncement() {
     setSaving(true);
-    setSaved(false);
     setError(null);
     updateAdminAnnouncementWithAuth(draft)
       .then((ret) => {
@@ -485,46 +484,93 @@ function AnnouncementManager() {
         const message = data?.message || "";
         setAnnouncement(message);
         setDraft(message);
-        setSaved(true);
+        setIsEditing(false);
       })
       .finally(() => {
         setSaving(false);
       });
   }
 
+  function startEditing() {
+    setDraft(announcement || "");
+    setError(null);
+    setIsEditing(true);
+  }
+
+  function cancelEditing() {
+    setDraft(announcement || "");
+    setError(null);
+    setIsEditing(false);
+  }
+
   if (loading) {
     return <p>Loading announcement...</p>;
   }
 
+  if (!isEditing) {
+    return (
+      <div className="announcement-manager">
+        {announcement ? (
+          <>
+            <div className="announcement-preview">
+              <p>{announcement}</p>
+            </div>
+            <div className="announcement-actions">
+              <button
+                className="button button--subtle button--compact"
+                onClick={startEditing}
+                type="button"
+              >
+                Edit
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="announcement-actions">
+            <button
+              className="button button--subtle button--compact"
+              onClick={startEditing}
+              type="button"
+            >
+              Create announcement message
+            </button>
+          </div>
+        )}
+        {error && <p className="announcement-manager-error">{error}</p>}
+      </div>
+    );
+  }
+
   return (
     <div className="announcement-manager">
-      <p className="announcement-manager-label">Announcement message</p>
       <textarea
         className="announcement-manager-input"
         value={draft}
         onChange={(e) => {
           setDraft(e.target.value);
-          setSaved(false);
         }}
-        placeholder="Enter message shown to admins and ticket creators"
+        placeholder="Enter message shown to ticket creators"
         rows={4}
       />
-      <button
-        className="button button--primary announcement-manager-save"
-        onClick={saveAnnouncement}
-        type="button"
-        disabled={saving}
-      >
-        {saving ? "Saving..." : "Save message"}
-      </button>
-      {saved && <p className="announcement-manager-saved">Saved.</p>}
+      <div className="announcement-actions">
+        <button
+          className="button button--primary button--compact"
+          onClick={saveAnnouncement}
+          type="button"
+          disabled={saving}
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+        <button
+          className="button button--subtle button--compact"
+          onClick={cancelEditing}
+          type="button"
+          disabled={saving}
+        >
+          Cancel
+        </button>
+      </div>
       {error && <p className="announcement-manager-error">{error}</p>}
-      {announcement && (
-        <div className="announcement-preview">
-          <p className="announcement-preview-label">Current message</p>
-          <p>{announcement}</p>
-        </div>
-      )}
     </div>
   );
 }

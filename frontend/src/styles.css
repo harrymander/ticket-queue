@@ -265,23 +265,8 @@ textarea {
   background: #eff6ff;
 }
 
-.announcement-manager-label,
-.announcement-preview-label {
-  margin: 0 0 0.35rem;
-  font-weight: 600;
-}
-
 .announcement-manager-input {
-  margin-bottom: 0.5rem;
-}
-
-.announcement-manager-save {
-  width: 100%;
-}
-
-.announcement-manager-saved {
-  color: #065f46;
-  font-weight: 600;
+  margin-bottom: 0.75rem;
 }
 
 .announcement-manager-error,
@@ -290,10 +275,14 @@ textarea {
   font-weight: 600;
 }
 
+.announcement-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .announcement-preview {
-  margin-top: 0.75rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #bfdbfe;
+  margin-bottom: 0.75rem;
 }
 
 .announcement-message {
