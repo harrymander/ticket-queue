@@ -57,7 +57,11 @@ jobs:
       - name: Install dependencies
         run: npm -C frontend ci
       - name: Build frontend
-        run: npm -C frontend run build -- --emptyOutDir --outDir "$PWD/ticket_queue/frontend"
+        env:
+          FRONTEND_PATH: ticket_queue/frontend
+        run: |
+          npm -C frontend run build -- --emptyOutDir --outDir "$PWD/$FRONTEND_PATH"
+          tree -a "$FRONTEND_PATH"
       - name: Disable custom build hook
         run: |
           rm frontend_build_hook.py
