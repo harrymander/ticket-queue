@@ -181,6 +181,46 @@ function HasTicket() {
   );
 }
 
+function AnnouncementMessage() {
+  const [announcement, setAnnouncement] = useState(null);
+  const [announcementError, setAnnouncementError] = useState(null);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
+    Api.fetchAnnouncement({ signal })
+      .then((ret) => {
+        if (ret.ok) {
+          return ret.json();
+        }
+        setAnnouncementError("Error loading message");
+        return null;
+      })
+      .then((data) => {
+        setAnnouncement(data?.message || null);
+      });
+
+    return () => {
+      abortController.abort("Cleanup");
+    };
+  }, []);
+
+  if (announcementError) {
+    return <p className="announcement-error">{announcementError}</p>;
+  }
+
+  if (announcement) {
+    return (
+      <div className="announcement-message">
+        <p>{announcement}</p>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 function TicketCreator() {
   const { createTicket, ticketPending, ticketError } = useTicketContext();
   const [value, setValue] = useState("");
@@ -198,6 +238,7 @@ function TicketCreator() {
 
   return (
     <div className="create-ticket">
+      <AnnouncementMessage />
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}

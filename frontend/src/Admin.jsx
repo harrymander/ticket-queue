@@ -162,6 +162,36 @@ function useAuthContext() {
     [password, logOut],
   );
 
+  const fetchAdminAnnouncementWithAuth = useCallback(
+    async (payload = {}) => {
+      return Api.fetchAdminAnnouncement(password, payload).then((ret) => {
+        if (ret.status === 401) {
+          console.error("No longer authenticated!");
+          logOut();
+        } else {
+          return ret;
+        }
+      });
+    },
+    [password, logOut],
+  );
+
+  const updateAdminAnnouncementWithAuth = useCallback(
+    async (message, payload = {}) => {
+      return Api.updateAdminAnnouncement(message, password, payload).then(
+        (ret) => {
+          if (ret.status === 401) {
+            console.error("No longer authenticated!");
+            logOut();
+          } else {
+            return ret;
+          }
+        },
+      );
+    },
+    [password, logOut],
+  );
+
   const deleteAdminTicketWithAuth = useCallback(
     async (id, payload = {}) => {
       return Api.deleteAdminTicket(id, password, payload).then((ret) => {
@@ -181,6 +211,8 @@ function useAuthContext() {
     logOut,
     fetchAdminWithAuth,
     fetchAdminClientUrlWithAuth,
+    fetchAdminAnnouncementWithAuth,
+    updateAdminAnnouncementWithAuth,
     deleteAdminTicketWithAuth,
   };
 }
@@ -395,6 +427,108 @@ function ClientUrlManager() {
   );
 }
 
+function AnnouncementManager() {
+  const { fetchAdminAnnouncementWithAuth, updateAdminAnnouncementWithAuth } =
+    useAuthContext();
+  const [announcement, setAnnouncement] = useState(null);
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
+    fetchAdminAnnouncementWithAuth({ signal })
+      .then((ret) => {
+        if (!ret) {
+          return null;
+        }
+        if (ret.ok) {
+          return ret.json();
+        }
+        setError("Error loading announcement");
+        return null;
+      })
+      .then((data) => {
+        const message = data?.message || "";
+        setAnnouncement(message);
+        setDraft(message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+
+    return () => {
+      abortController.abort("Cleanup");
+    };
+  }, [fetchAdminAnnouncementWithAuth]);
+
+  function saveAnnouncement() {
+    setSaving(true);
+    setSaved(false);
+    setError(null);
+    updateAdminAnnouncementWithAuth(draft)
+      .then((ret) => {
+        if (!ret) {
+          return null;
+        }
+        if (ret.ok) {
+          return ret.json();
+        }
+        setError("Error saving announcement");
+        return null;
+      })
+      .then((data) => {
+        const message = data?.message || "";
+        setAnnouncement(message);
+        setDraft(message);
+        setSaved(true);
+      })
+      .finally(() => {
+        setSaving(false);
+      });
+  }
+
+  if (loading) {
+    return <p>Loading announcement...</p>;
+  }
+
+  return (
+    <div className="announcement-manager">
+      <p className="announcement-manager-label">Announcement message</p>
+      <textarea
+        className="announcement-manager-input"
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          setSaved(false);
+        }}
+        placeholder="Enter message shown to admins and ticket creators"
+        rows={4}
+      />
+      <button
+        className="button button--primary announcement-manager-save"
+        onClick={saveAnnouncement}
+        type="button"
+        disabled={saving}
+      >
+        {saving ? "Saving..." : "Save message"}
+      </button>
+      {saved && <p className="announcement-manager-saved">Saved.</p>}
+      {error && <p className="announcement-manager-error">{error}</p>}
+      {announcement && (
+        <div className="announcement-preview">
+          <p className="announcement-preview-label">Current message</p>
+          <p>{announcement}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdminDashboard() {
   const { logOut } = useAuthContext();
   return (
@@ -407,6 +541,7 @@ function AdminDashboard() {
         >
           Log out
         </button>
+        <AnnouncementManager />
         <ClientUrlManager />
       </div>
       <TicketsManager />

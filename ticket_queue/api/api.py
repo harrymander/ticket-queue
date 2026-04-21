@@ -9,7 +9,7 @@ from fastapi import (
 from ticket_queue.api.admin_api import admin_api
 from ticket_queue.api.dependencies import QueueConnector, TicketId, TokenQuery
 from ticket_queue.api.errors import TicketNotFound, Unauthorized
-from ticket_queue.models import NewTicket, QueueTicket
+from ticket_queue.models import AnnouncementMessage, NewTicket, QueueTicket
 
 api = FastAPI()
 
@@ -39,6 +39,12 @@ def new_ticket(
 ) -> QueueTicket:
     with connector as queue:
         return queue.enqueue(new_ticket.name)
+
+
+@api.get("/announcement")
+def get_announcement(connector: QueueConnector) -> AnnouncementMessage:
+    with connector as queue:
+        return AnnouncementMessage(message=queue.get_announcement())
 
 
 TokenAuthHeader = Annotated[

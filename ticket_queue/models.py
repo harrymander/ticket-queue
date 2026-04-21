@@ -51,3 +51,10 @@ class TicketClientUrl(BaseModel):
         min_length=1,
         description="URL for the ticket-creation client.",
     )
+
+
+class AnnouncementMessage(BaseModel):
+    message: str | None = Field(
+        default=None,
+        description="Optional announcement shown on admin and ticket pages.",
+    )

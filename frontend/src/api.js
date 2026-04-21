@@ -28,6 +28,10 @@ export async function fetchTicket(id, token) {
   return fetchApi(`ticket/${id}?${q.toString()}`);
 }
 
+export async function fetchAnnouncement(payload = {}) {
+  return fetchApi("announcement", payload);
+}
+
 export async function fetchAdminApi(endpoint, password, payload = {}) {
   payload.headers = {
     ...payload.headers,
@@ -38,6 +42,22 @@ export async function fetchAdminApi(endpoint, password, payload = {}) {
 
 export async function fetchAdminClientUrl(password, payload = {}) {
   return fetchAdminApi("client-url", password, payload);
+}
+
+export async function fetchAdminAnnouncement(password, payload = {}) {
+  return fetchAdminApi("announcement", password, payload);
+}
+
+export async function updateAdminAnnouncement(message, password, payload = {}) {
+  return fetchAdminApi("announcement", password, {
+    ...payload,
+    method: "PUT",
+    body: JSON.stringify({ message }),
+    headers: {
+      "Content-Type": "application/json",
+      ...(payload.headers || {}),
+    },
+  });
 }
 
 export async function deleteAdminTicket(id, password, payload = {}) {
