@@ -102,7 +102,8 @@ jobs:
             . "$worktree/"
 
           git -C "$worktree" add --all
-          if git -C "$worktree" commit -m "Bundle for ${{ github.sha }}"; then
+          if git -C "$worktree" commit --quiet -m "Bundle for ${{ github.sha }}"; then
+            git show --stat --color=always
             git -C "$worktree" push -u origin bundled
           else
             echo "No changes to commit."
