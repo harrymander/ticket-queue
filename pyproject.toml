@@ -5,6 +5,8 @@ description = "Add your description here"
 authors = [
     { name = "Harry Mander", email = "harrymander96@gmail.com" }
 ]
+readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.12"
 dependencies = [
     "click>=8.1.7",
