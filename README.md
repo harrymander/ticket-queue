@@ -4,6 +4,8 @@ A simple ticket queue web app that can be run from a single command.
 
 ## Quick start
 
+### Python package manager
+
 This project is not currently available on PyPI. However, the server can be run
 directly without cloning using a package manager such as `uvx` or `pipx`:
 
@@ -21,6 +23,21 @@ installed. This branch is automatically updated by GitHub Actions whenever
 `main` is updated. If you have Node.js installed and want to build the frontend
 yourself (e.g. if you want to use a different version of node), run the above
 command without the `@bundled` suffix.
+
+### Docker
+
+You can also run the published container image from GitHub Container Registry:
+
+```
+docker run --rm --network host ghcr.io/harrymander/ticket-queue:latest
+```
+
+If you don't want to run in host network mode, specify the port and URL
+manually. E.g.:
+
+```
+docker run --rm -p 8000:8000 ghcr.io/harrymander/ticket-queue:latest --url=<CLIENT DISPLAY URL>
+```
 
 ### Manual installation
 
