@@ -90,7 +90,7 @@ jobs:
 
           rsync \
             --info=progress2 \
-            -av \
+            -avv \
             --delete --delete-excluded \
             --filter 'P /.git' --exclude=/.git --filter=':- .gitignore' \
             . "$worktree/"
