@@ -56,6 +56,17 @@ not recommended since it may break your system Python installation.)
 branch. Check out the `bundled` branch to use the pre-packaged frontend if Node
 is not installed.
 
+## Security warning
+
+This project is intended for lightweight, self-hosted use. It should not be used
+in any important or large-scale applications.
+
+- Admin passwords and client tokens are persisted in plain text in client-side
+  localStorage.
+- Admin URLs can include the password as a query parameter, which can leak via
+  logs, history, and screenshots.
+- Client tokens are stored in plain text in the database.
+
 ## Development
 
 Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) for
