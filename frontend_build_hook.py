@@ -98,6 +98,10 @@ class FrontendBuilder(BuildHookInterface):
             )
 
     def initialize(self, version: str, build_data: dict) -> None:
+        if os.getenv("TICKET_QUEUE_DISABLE_FRONTEND_BUILD"):
+            self._log("Skipping frontend generation")
+            return
+
         target = self.target_name
         if target == "wheel":
             self._init_wheel(version, build_data)
