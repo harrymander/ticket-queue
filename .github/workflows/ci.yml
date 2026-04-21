@@ -67,7 +67,7 @@ jobs:
             --info=progress2 \
             -av \
             --delete --delete-excluded \
-            --exclude=/.git --filter=':- .gitignore' \
+            --filter 'P /.git' --exclude=/.git --filter=':- .gitignore' \
             . "$worktree/"
 
           git -C "$worktree" add --all
