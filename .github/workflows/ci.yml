@@ -103,7 +103,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Commit changes and push to bundled branch
+      - name: Configure Git worktree
         run: |
           worktree="$(mktemp -d)/bundled"
 
@@ -113,17 +113,22 @@ jobs:
             git worktree add -b bundled "$worktree"
           fi
 
+          echo "BUNDLED_WORKTREE=$worktree" >> "$GITHUB_ENV"
+      - name: Copy files to bundled worktree
+        run: |
           rsync \
             --info=progress2 \
             -avv \
             --ignore-times --delete --delete-excluded \
             --filter 'P /.git' --exclude=/.git --filter=':- .gitignore' \
-            . "$worktree/"
-
-          git -C "$worktree" add --all
-          if git -C "$worktree" commit --quiet -m "Bundle for ${{ github.sha }}"; then
+            . "$BUNDLED_WORKTREE/"
+      - name: Commit and push bundled worktree
+        working-directory: ${{ env.BUNDLED_WORKTREE }}
+        run: |
+          git add --all
+          if git commit --quiet -m "Bundle for ${{ github.sha }}"; then
             git show --stat --color=always
-            git -C "$worktree" push -u origin bundled
+            git push -u origin bundled
           else
             echo "No changes to commit."
           fi
