@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
       - name: Run pre-commit checks
-        uses: pre-commit/action@v3
+        uses: pre-commit/action@v3.0.1
 
   bundle:
     runs-on: ubuntu-latest
