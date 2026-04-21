@@ -16,9 +16,33 @@ jobs:
       - name: Run pre-commit checks
         uses: pre-commit/action@v3.0.1
 
-  bundle:
+  test:
     runs-on: ubuntu-latest
     needs: [pre-commit]
+    env:
+      UV_LOCKED: "true"
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v8
+        with:
+          version: "0.11.7"
+          enable-cache: "true"
+      - name: Install Python dependencies
+        run: uv sync
+      - name: Python type checking
+        run: uv run mypy .
+      - name: Python tests
+        run: COLUMNS=120 uv run pytest -vvv --color=yes
+
+  bundle:
+    runs-on: ubuntu-latest
+    needs: [test]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -80,7 +104,7 @@ jobs:
 
   publish-container:
     runs-on: ubuntu-latest
-    needs: [pre-commit]
+    needs: [test]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
