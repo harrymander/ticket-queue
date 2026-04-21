@@ -63,7 +63,12 @@ jobs:
             git worktree add -b bundled "$worktree"
           fi
 
-          rsync --info=progress2 -av --delete --exclude=/.git --filter=':- .gitignore' . "$worktree/"
+          rsync \
+            --info=progress2 \
+            -av \
+            --delete --delete-excluded \
+            --filter 'P /.git' --exclude=/.git --filter=':- .gitignore' \
+            . "$worktree/"
 
           git -C "$worktree" add --all
           if git -C "$worktree" commit -m "Bundle for ${{ github.sha }}"; then
