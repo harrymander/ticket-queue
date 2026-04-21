@@ -36,6 +36,7 @@ jobs:
       - name: Disable custom build hook
         run: |
           rm frontend_build_hook.py
+          rm -rf frontend/
           perl -0777 -i -pe 's/(?ms)\[tool\.hatch\.build\.hooks\.custom\].*?^\n//' pyproject.toml
           ! git diff --exit-code -- pyproject.toml
       - name: Generate frontend package file
