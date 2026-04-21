@@ -171,6 +171,11 @@ DEFAULT_RANDOM_PASSWORD_LEN = 6
     requests (there will be a lot of these since the frontend regularly polls
     the backend).""",
 )
+@click.option(
+    "--announcement",
+    help="""Optional message to display on ticket creation page (can also be
+    set/edited via the admin web interface).""",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -185,6 +190,7 @@ def cli(
     random_password_len: int,
     browser: bool,
     access_log_level: str,
+    announcement: str | None,
 ) -> None:
     if workers > 1 and reload:
         raise click.UsageError("Cannot use --reload with more than one worker")
@@ -223,6 +229,7 @@ def cli(
         frontend=frontend,
         admin_password=admin_password,
         database=database,
+        init_announcement=announcement,
     )
     save_config_to_env(config)
     print_startup_panel(

@@ -39,6 +39,9 @@ def create_app() -> FastAPI:
     config = get_config()
     with QueueConnection(config.database) as q:
         q.create()
+        announcement = config.init_announcement
+        if announcement:
+            q.set_announcement(announcement)
 
     app = FastAPI(openapi_url=None)
     app.mount("/api", api)
