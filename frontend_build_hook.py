@@ -63,7 +63,7 @@ class FrontendBuilder(BuildHookInterface):
         npm = NpmRunner(config.node_root)
 
         self._log("Installing Node packages...")
-        npm.run("install")
+        npm.run("ci")
 
         outdir = os.path.join(workdir, config.package_dir)
         os.makedirs(outdir, exist_ok=False)
